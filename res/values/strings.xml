@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">GroupWalletCake</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="title_activity_quick_pay">QuickPayActivity</string>
+    <string name="loginUser">username or email</string>
+    <string name="password">password</string>
+    <string name="loginButton">login</string>
+    <string name="loginError">Invalid Username/Email or Password</string>
+    <string name="logInURL">http://whereone.com/GroupWalletCake/users/loginMobile</string>
+    <string name="logOutURL">http://whereone.com/GroupWalletCake/users/logoutMobile</string>
+    <string name="checkLogInURL">http://whereone.com/GroupWalletCake/users/loginMobileStatus</string>
+    <string name="getUserURL">http://whereone.com/GroupWalletCake/Users/getUser</string>
+    <string name="getWalletRelationsURL">http://whereone.com/GroupWalletCake/WalletRelations/getWalletRelations</string>
+    <string name="getWalletsURL">http://whereone.com/GroupWalletCake/WalletRelations/getWallets</string>
+    <string name="insertRecordURL">http://whereone.com/GroupWalletCake/Transactions/addRemote</string>
+    <string name="oweButton">They paid</string>
+    <string name="owedButton">I paid</string>
+    <string name="amount">amount</string>
+    <string name="wallets">wallets</string>
+    <string name="users">users</string>
+    <string name="comments">comments</string>
+    <string name="submit">submit</string>
+    <string name="confirmRecord">Confirm</string>
+    <string name="cancelRecord">Cancel</string>
+    <string name="logout">logout</string>
+    <string name="title_activity_quick_pay_fragment">QuickPayFragment</string>
+
+</resources>

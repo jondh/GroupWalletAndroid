@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+    <TableRow android:layout_width="fill_parent"
+              android:id="@+id/recordRow01"
+              android:layout_height="wrap_content">
+
+        <TextView android:id="@+id/record_name"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:textStyle="bold" 
+                  android:gravity="left"
+                  android:layout_weight="1" />
+    </TableRow>
+	
+    <TableRow android:layout_height="wrap_content"
+              android:layout_width="fill_parent">
+
+	    <TextView android:id="@+id/record_amount"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="1" 
+                  android:height="20sp" />
+	
+	    <TextView android:layout_height="wrap_content"
+	                      android:layout_width="fill_parent" 
+	                      android:layout_weight="1"
+	                      android:gravity="right"
+	                      android:id="@+id/record_description"
+	                      android:height="20sp" />
+	</TableRow>
+
+</TableLayout>
