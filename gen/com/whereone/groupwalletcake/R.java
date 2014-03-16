@@ -8,6 +8,9 @@
 package com.whereone.groupwalletcake;
 
 public final class R {
+    public static final class array {
+        public static final int options_array=0x7f060000;
+    }
     public static final class attr {
     }
     public static final class dimen {
@@ -21,75 +24,120 @@ public final class R {
         public static final int activity_vertical_margin=0x7f040001;
     }
     public static final class drawable {
-        public static final int ic_launcher=0x7f020000;
+        public static final int ic_blank=0x7f020000;
+        public static final int ic_drawer=0x7f020001;
+        public static final int ic_launcher=0x7f020002;
     }
     public static final class id {
-        public static final int action_settings=0x7f080017;
-        public static final int amountQuickPay=0x7f080006;
-        public static final int commentsQuickPay=0x7f080009;
-        public static final int dialog_owe_row2=0x7f08000e;
-        public static final int dialog_owe_row3=0x7f08000f;
-        public static final int dialog_owe_user=0x7f08000d;
-        public static final int dialog_owed_row1=0x7f080010;
-        public static final int dialog_owed_row2=0x7f080011;
-        public static final int dialog_owed_row3=0x7f080012;
-        public static final int loginButton=0x7f080002;
-        public static final int loginError=0x7f080003;
-        public static final int logoutQuickPay=0x7f08000c;
-        public static final int oweQuickPay=0x7f08000a;
-        public static final int owedQuickPay=0x7f08000b;
-        public static final int password=0x7f080000;
-        public static final int recordRow01=0x7f080013;
-        public static final int record_amount=0x7f080015;
-        public static final int record_description=0x7f080016;
-        public static final int record_name=0x7f080014;
-        public static final int submitQuickPay=0x7f080008;
-        public static final int userAuto=0x7f080005;
-        public static final int userLogin=0x7f080001;
-        public static final int walletAuto=0x7f080004;
-        public static final int whoPayQuickPay=0x7f080007;
+        public static final int action_settings=0x7f090034;
+        public static final int amountQuickPay=0x7f090013;
+        public static final int commentsQuickPay=0x7f090016;
+        public static final int container=0x7f090005;
+        public static final int dialog_owe_row2=0x7f09001f;
+        public static final int dialog_owe_row3=0x7f090020;
+        public static final int dialog_owe_user=0x7f09001e;
+        public static final int dialog_owed_row1=0x7f090021;
+        public static final int dialog_owed_row2=0x7f090022;
+        public static final int dialog_owed_row3=0x7f090023;
+        public static final int drawer_layout=0x7f090004;
+        public static final int fragment_quick_pay_layout=0x7f090010;
+        public static final int horizontalScrollView1=0x7f09000a;
+        public static final int imageView1=0x7f090007;
+        public static final int layer=0x7f09000f;
+        public static final int layer0=0x7f09001d;
+        public static final int left_drawer=0x7f090006;
+        public static final int loginButton=0x7f090002;
+        public static final int loginError=0x7f090003;
+        public static final int logoutQuickPay=0x7f090019;
+        public static final int newWallet_text=0x7f090024;
+        public static final int oweQuickPay=0x7f090017;
+        public static final int owedQuickPay=0x7f090018;
+        public static final int password=0x7f090000;
+        public static final int profile_friends=0x7f09000e;
+        public static final int profile_friends_linear=0x7f09000d;
+        public static final int profile_name=0x7f090009;
+        public static final int profile_username=0x7f090008;
+        public static final int profile_wallets=0x7f09000c;
+        public static final int profile_wallets_linear=0x7f09000b;
+        public static final int recordRow01=0x7f090027;
+        public static final int record_amount=0x7f090029;
+        public static final int record_date=0x7f090026;
+        public static final int record_description=0x7f09002a;
+        public static final int record_name=0x7f090028;
+        public static final int relationship_name=0x7f09002b;
+        public static final int relationship_owe=0x7f09002c;
+        public static final int relationship_owed=0x7f09002d;
+        public static final int relationship_total=0x7f09002f;
+        public static final int relationship_walletName=0x7f09001a;
+        public static final int relationships_add=0x7f09001b;
+        public static final int submitQuickPay=0x7f090015;
+        public static final int tableRow1=0x7f090025;
+        public static final int tableRow2=0x7f09002e;
+        public static final int userAuto=0x7f090012;
+        public static final int userLogin=0x7f090001;
+        public static final int walletAuto=0x7f090011;
+        public static final int wallet_name=0x7f090030;
+        public static final int wallet_owe=0x7f090031;
+        public static final int wallet_owed=0x7f090032;
+        public static final int wallet_total=0x7f090033;
+        public static final int wallets_new=0x7f09001c;
+        public static final int whoPayQuickPay=0x7f090014;
     }
     public static final class layout {
         public static final int activity_login=0x7f030000;
-        public static final int activity_quick_pay=0x7f030001;
-        public static final int insert_record_dialog_owe=0x7f030002;
-        public static final int insert_record_dialog_owed=0x7f030003;
-        public static final int list_item=0x7f030004;
-        public static final int quick_pay_fragment=0x7f030005;
-        public static final int record_row=0x7f030006;
-        public static final int records=0x7f030007;
+        public static final int activity_main=0x7f030001;
+        public static final int drawer_list_item=0x7f030002;
+        public static final int fragment_profile=0x7f030003;
+        public static final int fragment_profile0=0x7f030004;
+        public static final int fragment_quick_pay=0x7f030005;
+        public static final int fragment_records=0x7f030006;
+        public static final int fragment_relationships=0x7f030007;
+        public static final int fragment_wallets=0x7f030008;
+        public static final int horizontal=0x7f030009;
+        public static final int insert_record_dialog_owe=0x7f03000a;
+        public static final int insert_record_dialog_owed=0x7f03000b;
+        public static final int list_item=0x7f03000c;
+        public static final int new_wallet_dialog=0x7f03000d;
+        public static final int record_row=0x7f03000e;
+        public static final int relationship_row=0x7f03000f;
+        public static final int wallet_row=0x7f030010;
     }
     public static final class menu {
-        public static final int login=0x7f070000;
-        public static final int quick_pay=0x7f070001;
+        public static final int login=0x7f080000;
+        public static final int quick_pay=0x7f080001;
     }
     public static final class string {
         public static final int action_settings=0x7f050001;
-        public static final int amount=0x7f050011;
+        public static final int addUserToWallet=0x7f05001e;
+        public static final int amount=0x7f050012;
         public static final int app_name=0x7f050000;
-        public static final int cancelRecord=0x7f050017;
+        public static final int cancelRecord=0x7f050018;
         public static final int checkLogInURL=0x7f05000a;
-        public static final int comments=0x7f050014;
-        public static final int confirmRecord=0x7f050016;
+        public static final int comments=0x7f050015;
+        public static final int confirmRecord=0x7f050017;
+        public static final int drawer_close=0x7f05001c;
+        public static final int drawer_open=0x7f05001b;
+        public static final int getRecordsURL=0x7f05000e;
         public static final int getUserURL=0x7f05000b;
         public static final int getWalletRelationsURL=0x7f05000c;
         public static final int getWalletsURL=0x7f05000d;
         public static final int hello_world=0x7f050002;
-        public static final int insertRecordURL=0x7f05000e;
+        public static final int insertRecordURL=0x7f05000f;
         public static final int logInURL=0x7f050008;
         public static final int logOutURL=0x7f050009;
         public static final int loginButton=0x7f050006;
         public static final int loginError=0x7f050007;
         public static final int loginUser=0x7f050004;
-        public static final int logout=0x7f050018;
-        public static final int oweButton=0x7f05000f;
-        public static final int owedButton=0x7f050010;
+        public static final int logout=0x7f050019;
+        public static final int newWallet=0x7f05001d;
+        public static final int oweButton=0x7f050010;
+        public static final int owedButton=0x7f050011;
         public static final int password=0x7f050005;
-        public static final int submit=0x7f050015;
+        public static final int submit=0x7f050016;
         public static final int title_activity_quick_pay=0x7f050003;
-        public static final int title_activity_quick_pay_fragment=0x7f050019;
-        public static final int users=0x7f050013;
-        public static final int wallets=0x7f050012;
+        public static final int title_activity_quick_pay_fragment=0x7f05001a;
+        public static final int users=0x7f050014;
+        public static final int wallets=0x7f050013;
     }
     public static final class style {
         /** 
@@ -113,10 +161,10 @@ public final class R {
     
  API 14 theme customizations can go here. 
          */
-        public static final int AppBaseTheme=0x7f060000;
+        public static final int AppBaseTheme=0x7f070000;
         /**  Application theme. 
  All customizations that are NOT specific to a particular API-level can go here. 
          */
-        public static final int AppTheme=0x7f060001;
+        public static final int AppTheme=0x7f070001;
     }
 }

@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 
 import com.whereone.LogOut;
 import com.whereone.LogOut.LogOutListener;
+import com.whereone.groupWallet.activities.LoginActivity;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
 import com.whereone.groupWallet.controllers.TransactionsController;
 import com.whereone.groupWallet.controllers.UsersController;
@@ -37,7 +38,7 @@ public class LogOutCurrent {
 	}
 
 	
-	public void logOut(final Context context, DBhttpRequest httpRequest, String logOutURL, String public_token, String private_tokenH, String _timeStamp){
+	public void logOut(final Context context, DBhttpRequest httpRequest, String public_token, String private_tokenH, String _timeStamp){
 		
 		LogOut LogOut = new LogOut(httpRequest, profile.getInt("id", 0), public_token, private_tokenH, _timeStamp);
 	   	LogOut.setLogOutListener(new LogOutListener(){
@@ -60,6 +61,6 @@ public class LogOutCurrent {
 	   		
 	   		}
 	   	});
-	   	LogOut.execute(logOutURL);
+	   	LogOut.execute(context.getString(R.string.logOutURL));
 	}
 }

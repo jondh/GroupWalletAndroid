@@ -91,22 +91,19 @@ public class GetUser extends AsyncTask<String, Void, User>{
 		
 		try {
 			JSONObject jObj = new JSONObject(result);
-			/*
-			JSONArray jUU = jObj.getJSONArray("UserUpdate");
-			JSONArray jWU = jObj.getJSONArray("WalletUpdate");
-			JSONArray jWRU = jObj.getJSONArray("WalletRelationUpdate");
-			*/
 			String success = jObj.getString("result");
 			if(success.contains( "success" )){
-				JSONObject jObjU = jObj.getJSONObject("User");
-				return new User(
-						jObjU.getInt("id"),
-						jObjU.getString("username"),
-						jObjU.getString("firstName"),
-						jObjU.getString("lastName"),
-						jObjU.getString("email"),
-						0
-						);
+				if(!jObj.getBoolean("empty")){
+					JSONObject jObjU = jObj.getJSONObject("user");
+					return new User(
+							jObjU.getInt("id"),
+							jObjU.getString("username"),
+							jObjU.getString("firstName"),
+							jObjU.getString("lastName"),
+							jObjU.getString("email"),
+							0);
+				}
+				return new User(-1,"-1","-1","-1","-1",-1);
 			}
 			else{
 				return null;
@@ -120,8 +117,8 @@ public class GetUser extends AsyncTask<String, Void, User>{
 	}
 	
 	@Override
-	protected void onPostExecute(final User result) {
-		userListener.getUserComplete(result);
+	protected void onPostExecute(User result) {
+		userListener.getUserCompleted(result);
 	}
 
 	@Override
@@ -131,15 +128,8 @@ public class GetUser extends AsyncTask<String, Void, User>{
 	
 	public interface getUserListener{
 		public void getUserPreExecute();
-		public void getUserComplete(User user);
+		public void getUserCompleted(User user);
 		public void getUserCancelled();
 	}
-	/*
-	public interface getUpdateListener{
-		public void getUserUpdate(ArrayList<Integer> user_ids);
-		public void getWalletRelationUpdate(ArrayList<Integer> wallet_relaion_ids);
-		public void getWalletUpdate(ArrayList<Integer> wallet_ids); 
-	}
-	*/
 }
 

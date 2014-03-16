@@ -2,33 +2,58 @@
 <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
-    <TableRow android:layout_width="fill_parent"
-              android:id="@+id/recordRow01"
-              android:layout_height="wrap_content">
 
-        <TextView android:id="@+id/record_name"
-                  android:layout_width="fill_parent"
-                  android:layout_height="wrap_content"
-                  android:textStyle="bold" 
-                  android:gravity="left"
-                  android:layout_weight="1" />
+    <TableRow
+        android:id="@+id/tableRow1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" >
+    </TableRow>
+
+    <TextView
+        android:id="@+id/record_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="right"
+        android:scrollHorizontally="true"
+        android:text="date"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TableRow
+        android:id="@+id/recordRow01"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/record_name"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="left"
+            android:text="name"
+            android:textSize="20dp"
+            android:textStyle="bold" />
     </TableRow>
 	
     <TableRow android:layout_height="wrap_content"
               android:layout_width="fill_parent">
 
-	    <TextView android:id="@+id/record_amount"
-                  android:layout_width="fill_parent"
-                  android:layout_height="wrap_content"
-                  android:layout_weight="1" 
-                  android:height="20sp" />
+	    <TextView
+	        android:id="@+id/record_amount"
+	        android:layout_width="fill_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1"
+	        android:height="20sp"
+	        android:text="amount" />
 	
-	    <TextView android:layout_height="wrap_content"
-	                      android:layout_width="fill_parent" 
-	                      android:layout_weight="1"
-	                      android:gravity="right"
-	                      android:id="@+id/record_description"
-	                      android:height="20sp" />
+	    <TextView
+	        android:id="@+id/record_description"
+	        android:layout_width="fill_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1"
+	        android:gravity="right"
+	        android:height="20sp"
+	        android:text="comments" />
+
 	</TableRow>
 
 </TableLayout>

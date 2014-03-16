@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent" >
+
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:src="@drawable/ic_blank" />
+
+    <TextView
+        android:id="@+id/profile_username"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/imageView1"
+        android:text="username"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <TextView
+        android:id="@+id/profile_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/profile_username"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/profile_username"
+        android:text="name"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <com.whereone.CustomHorizontalScrollView
+        android:id="@+id/horizontalScrollView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/imageView1" >
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="fill"
+            android:orientation="horizontal" >
+
+            <LinearLayout
+                android:id="@+id/profile_wallets_linear"
+                android:layout_width="320dp"
+                android:layout_height="310dp"
+                android:layout_marginTop="44dp"
+                android:orientation="vertical" >
+
+                <ListView
+                    android:id="@+id/profile_wallets"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" >
+                </ListView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/profile_friends_linear"
+                android:layout_width="320dp"
+                android:layout_height="310dp"
+                android:layout_marginTop="44dp"
+                android:orientation="vertical" >
+
+                <ListView
+                    android:id="@+id/profile_friends"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent" >
+                </ListView>
+            </LinearLayout>
+        </LinearLayout>
+
+    </com.whereone.CustomHorizontalScrollView>
+
+</RelativeLayout>

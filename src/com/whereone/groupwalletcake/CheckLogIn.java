@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 
 import com.whereone.LogOut;
 import com.whereone.LogOut.LogOutListener;
+import com.whereone.groupWallet.activities.LoginActivity;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
 import com.whereone.groupWallet.controllers.TransactionsController;
 import com.whereone.groupWallet.controllers.UsersController;

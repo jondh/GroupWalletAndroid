@@ -8,13 +8,14 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.util.Log;
 
 import com.whereone.groupWallet.models.User;
 import com.whereone.groupwalletcake.GetUser;
-import com.whereone.groupwalletcake.LogOutCurrent;
-import com.whereone.groupwalletcake.R;
 import com.whereone.groupwalletcake.GetUser.getUserListener;
+import com.whereone.groupwalletcake.R;
 
 public class UsersController extends SQLiteOpenHelper {
 
@@ -27,9 +28,6 @@ public class UsersController extends SQLiteOpenHelper {
 	public static final String COLUMN_LASTNAME = "lastname";
 	public static final String COLUMN_EMAIL = "email";
 	
-	private SQLiteDatabase databaseW;
-	private SQLiteDatabase databaseR;
-	private LogOutCurrent logOut;
 	private Context context;
 
 	private static final String DATABASE_NAME = "users.db";
@@ -42,14 +40,11 @@ public class UsersController extends SQLiteOpenHelper {
 	      + " text not null," + COLUMN_FIRSTNAME
 	      + " text not null," + COLUMN_LASTNAME
 	      + " text not null," + COLUMN_EMAIL
-	      + " test not null);";
+	      + " text not null);";
 
-	public UsersController(Context _context, LogOutCurrent _logOut) {
+	public UsersController(Context _context) {
 		super(_context, DATABASE_NAME, null, DATABASE_VERSION);
 		
-		databaseW = this.getWritableDatabase();
-		databaseR = this.getReadableDatabase();
-		logOut = _logOut;
 		context = _context;
 	}
 
@@ -63,8 +58,8 @@ public class UsersController extends SQLiteOpenHelper {
 		Log.w(WalletsController.class.getName(),
 		        "Upgrading database from version " + oldVersion + " to "
 		            + newVersion + ", which will destroy all old data");
-		    database.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
-		    onCreate(database);
+		database.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
+		onCreate(database);
 	}
 	
 	public void setUsersControllerListener(usersControllerListener _listener) {
@@ -72,14 +67,21 @@ public class UsersController extends SQLiteOpenHelper {
     }
 	
 	public interface usersControllerListener{
-		public void insertUserAsyncComplete();
+		public void insertUserAsyncComplete(Integer userID);
+		// 1 == Add Success
+		// 0 == Empty Result
+		// -1 == Null Result -> due to bad access token(s)
+		public void getUserComplete(Integer result);
 	}
 	
 	public void removeAll(){
+		SQLiteDatabase databaseW = this.getWritableDatabase();
 		databaseW.delete(TABLE_USERS, null, null);
+		databaseW.close();
 	}
 	
 	public void insertUsers(ArrayList<User> users){
+		SQLiteDatabase databaseW = this.getWritableDatabase();
 		for(Integer i = 0; i < users.size(); i++){
 			User curUser = users.get(i);
 			ContentValues values = new ContentValues();
@@ -95,9 +97,11 @@ public class UsersController extends SQLiteOpenHelper {
 				Log.i("Wallet Constraint Exception", curUser.getUserID() + " duplicate");
 			}
 		}
+		databaseW.close();
 	}
 	
 	public User getUserFromUserName(String username){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
 				COLUMN_ID,
 				COLUMN_USERNAME,
@@ -120,15 +124,18 @@ public class UsersController extends SQLiteOpenHelper {
 			user.setLastName(cursor.getString(cursor.getColumnIndex(COLUMN_LASTNAME)));
 			user.setUserName(cursor.getString(cursor.getColumnIndex(COLUMN_USERNAME)));
 			user.setUserID(cursor.getInt(cursor.getColumnIndex(COLUMN_ID)));
+			databaseR.close();
 			return user;  
         }
         else
         {
+        	databaseR.close();
             return null;
         }
 	}
 	
 	public Integer getIdFromUserName(String username){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
 				COLUMN_ID
 		};
@@ -143,15 +150,42 @@ public class UsersController extends SQLiteOpenHelper {
 		if(cursor.getCount() >0)
         {
 			cursor.moveToNext();
+			databaseR.close();
 			return cursor.getInt(cursor.getColumnIndex(COLUMN_ID)) ;  
         }
         else
         {
+        	databaseR.close();
             return 0;
         }
 	}
 	
+	public String getUserFromId(Integer userID){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+		String[] columns = {
+				COLUMN_USERNAME
+		};
+		
+		String whereClause = "id = ?";
+		String[] whereArgs = new String[]{
+				userID.toString()
+		};
+			
+		Cursor cursor = databaseR.query(TABLE_USERS, columns, whereClause, whereArgs, null, null, null);
+			
+		if(cursor.getCount() >0)
+        {
+            cursor.moveToNext();
+            databaseR.close();
+           return cursor.getString(cursor.getColumnIndex(COLUMN_USERNAME));
+             
+        }
+		databaseR.close();
+		return "";
+	}
+	
 	public ArrayList<String> getUsersFromIds(ArrayList<Integer> userIDs){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
 				COLUMN_USERNAME
 		};
@@ -175,10 +209,53 @@ public class UsersController extends SQLiteOpenHelper {
 	             }
 	        }
 		}
+		databaseR.close();
 		return user_name;
 	}
 	
+	public ArrayList<User> getUserssFromIds(ArrayList<Integer> userIDs){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+		if(userIDs == null) return null;
+		String[] columns = {
+				COLUMN_ID,
+				COLUMN_USERNAME,
+				COLUMN_FIRSTNAME,
+				COLUMN_LASTNAME,
+				COLUMN_EMAIL
+		};
+		
+		ArrayList<User> users = new ArrayList<User>();
+		
+		for(int i = 0; i < userIDs.size(); i++){
+		
+			String whereClause = "id = ?";
+			String[] whereArgs = new String[]{
+					userIDs.get(i).toString()
+			};
+			
+			Cursor cursor = databaseR.query(TABLE_USERS, columns, whereClause, whereArgs, null, null, null);
+			
+			if(cursor.getCount() >0)
+	        {
+	            while (cursor.moveToNext())
+	            {
+	                 users.add( new User(
+	                		 cursor.getInt(cursor.getColumnIndex(COLUMN_ID)),
+	                		 cursor.getString(cursor.getColumnIndex(COLUMN_USERNAME)),
+	                		 cursor.getString(cursor.getColumnIndex(COLUMN_FIRSTNAME)),
+	                		 cursor.getString(cursor.getColumnIndex(COLUMN_LASTNAME)),
+	                		 cursor.getString(cursor.getColumnIndex(COLUMN_EMAIL)),
+	                		 0
+	                	));
+	             }
+	        }
+		}
+		databaseR.close();
+		return users;
+	}
+	
 	public void insertUser(User user){
+		SQLiteDatabase databaseW = this.getWritableDatabase();
 		ContentValues values = new ContentValues();
 		values.put("id", user.getUserID());
 		values.put("username", user.getUserName());
@@ -194,9 +271,11 @@ public class UsersController extends SQLiteOpenHelper {
 		catch (NullPointerException e){
 			Log.i("UserCont insertUser", "NullPointerException " + user.getUserID() + " " + user.getName());
 		}
+		databaseW.close();
 	}
 	
 	public ArrayList<String> getUserNames(){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
 				COLUMN_USERNAME
 		};
@@ -211,15 +290,18 @@ public class UsersController extends SQLiteOpenHelper {
             {
                  str.add( cursor.getString(cursor.getColumnIndex(COLUMN_USERNAME)) );
              }
+            databaseR.close();
             return str;
         }
         else
         {
+        	databaseR.close();
             return null;
         }
 	}
 	
 	public Boolean containsId(Integer id){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
 				COLUMN_ID
 		};
@@ -227,14 +309,16 @@ public class UsersController extends SQLiteOpenHelper {
 		Cursor cursor = databaseR.query(TABLE_USERS, columns, null, null, null, null, null);
 		
 		if(cursor.getCount() > 0){
+			databaseR.close();
 			return true;
 		}
 		else{
+			databaseR.close();
 			return false;
 		}
 	}
 	
-	public void getUserAndInsert(Integer id, String getUserURL, final DBhttpRequest httpRequest, final String public_token, final String private_tokenH, final String _timeStamp){
+	public void getUserAndInsert(Integer id, final DBhttpRequest httpRequest, final String public_token, final String private_tokenH, final String _timeStamp){
 		GetUser getUser = new GetUser(httpRequest, id, public_token, private_tokenH, _timeStamp);
 	   	getUser.setUserListener(new getUserListener(){
 
@@ -245,13 +329,26 @@ public class UsersController extends SQLiteOpenHelper {
 			}
 
 			@Override
-			public void getUserComplete(User user) {
+			public void getUserCompleted(User user) {
 				if(user != null){
-					insertUserAsync(user);
+				Log.i("User Result", user.getUserName());}
+				Integer result;
+				if(user != null){
+					if(user.getUserID() == -1 && user.getUserName() == "-1" && user.getFirstName() == "-1"){
+						Log.i("UsersController", "Empty Result");
+						result = 0;
+					}
+					else{
+						insertUserAsync(user);
+						result = 1;
+					}
 				}
 				else{
-					logOut.logOut(context, httpRequest, context.getString(R.string.logOutURL), public_token, private_tokenH, _timeStamp);
+					Log.i("UsersController", "result is null -> possibly should log out");
+					result = -1;
+					//logOut.logOut(context, httpRequest, context.getString(R.string.logOutURL), public_token, private_tokenH, _timeStamp);
 				}
+				listener.getUserComplete(result);
 			}
 
 			@Override
@@ -261,7 +358,12 @@ public class UsersController extends SQLiteOpenHelper {
 			}
 	   		
 	   	});
-	   	getUser.execute(getUserURL);
+	   	if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.HONEYCOMB) {
+	   		getUser.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, context.getString(R.string.getUserURL));
+	   	}
+	   	else {
+	   		getUser.execute(context.getString(R.string.getUserURL));
+	   	}
 	}
 	
 	protected void insertUserAsync(final User user){
@@ -270,11 +372,13 @@ public class UsersController extends SQLiteOpenHelper {
 			@Override
 			public void run(){
 				userTable.insertUser(user);
-				listener.insertUserAsyncComplete();
+				listener.insertUserAsyncComplete(user.getUserID());
 			}
 		}
 		
 		Thread insertUser = new Thread(new putUser());
 		insertUser.start();
 	}
+	
+	
 }

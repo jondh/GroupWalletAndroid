@@ -56,14 +56,16 @@ import com.whereone.groupWallet.models.WalletRelation;
 public class GetWalletRelations extends AsyncTask<String, Void, ArrayList<WalletRelation>>{
 	private DBhttpRequest httpRequest;
 	private getWalletRelationsListener walletListener;
+	private ArrayList<Integer> currentWRs;
 	private Integer userID;
 	private Integer walletID;
 	private String publicToken;
 	private String privateToken;
 	private String timeStamp;
 	
-	public GetWalletRelations(DBhttpRequest _httpRequest, Integer _userID, Integer _walletID, String public_token, String private_tokenH, String _timeStamp){
+	public GetWalletRelations(DBhttpRequest _httpRequest, ArrayList<Integer> _currentWRs, Integer _userID, Integer _walletID, String public_token, String private_tokenH, String _timeStamp){
 		httpRequest = _httpRequest;
+		currentWRs = _currentWRs;
 		userID = _userID;
 		walletID = _walletID;
 		publicToken = public_token;
@@ -88,6 +90,14 @@ public class GetWalletRelations extends AsyncTask<String, Void, ArrayList<Wallet
 	protected ArrayList<WalletRelation> doInBackground(String... arg0) {
 		String url = arg0[0];
 		ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
+		if(currentWRs != null){
+			for(int i = 0; i < currentWRs.size(); i++){
+				nameValuePairs.add(new BasicNameValuePair("currentRelations[]", currentWRs.get(i).toString()));
+			}
+		}
+		else{
+			nameValuePairs.add(new BasicNameValuePair("currentRelations[]", "0"));
+		}
 		nameValuePairs.add(new BasicNameValuePair("user_id", userID.toString()));
 		nameValuePairs.add(new BasicNameValuePair("wallet_id", walletID.toString()));
 		nameValuePairs.add(new BasicNameValuePair("public_token", publicToken));
@@ -101,17 +111,21 @@ public class GetWalletRelations extends AsyncTask<String, Void, ArrayList<Wallet
 		try {
 			JSONObject jObj = new JSONObject(result);
 			if(jObj.getString("result").contains("success")){
-				JSONArray jArr = jObj.getJSONArray("walletRelations");
-				for(int i = 0; i < jArr.length(); i++){
-					JSONObject jObject = jArr.getJSONObject(i);
-					JSONObject jObjWR = jObject.getJSONObject("WalletRelation");
-					WalletRelations.add(new WalletRelation(
-							jObjWR.getInt("id"),
-							jObjWR.getInt("wallet_id"),
-							jObjWR.getInt("user_id")
-						)
-					);
+				if(!jObj.getBoolean("empty")){
+					JSONArray jArr = jObj.getJSONArray("walletRelations");
+					for(int i = 0; i < jArr.length(); i++){
+						JSONObject jObject = jArr.getJSONObject(i);
+						JSONObject jObjWR = jObject.getJSONObject("WalletRelation");
+						WalletRelations.add(new WalletRelation(
+								jObjWR.getInt("id"),
+								jObjWR.getInt("wallet_id"),
+								jObjWR.getInt("user_id")
+							)
+						);
+					}
+					return WalletRelations;
 				}
+				WalletRelations.add(new WalletRelation(-1,-1,-1));
 				return WalletRelations;
 			}
 			return null;

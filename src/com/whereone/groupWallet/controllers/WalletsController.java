@@ -8,20 +8,19 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.util.Log;
 
 import com.whereone.groupWallet.models.Wallet;
 import com.whereone.groupwalletcake.GetWallets;
 import com.whereone.groupwalletcake.GetWallets.getWalletsListener;
-import com.whereone.groupwalletcake.LogOutCurrent;
 import com.whereone.groupwalletcake.R;
 
 public class WalletsController extends SQLiteOpenHelper {
 
 	private walletsControllerListener listener;
-	private SQLiteDatabase databaseW;
-	private SQLiteDatabase databaseR;
-	private LogOutCurrent logOut;
+
 	private Context context;
 	
 	public static final String TABLE_WALLETS = "wallets";
@@ -38,14 +37,11 @@ public class WalletsController extends SQLiteOpenHelper {
 	      + TABLE_WALLETS + "(" + COLUMN_ID
 	      + " integer primary key, " + COLUMN_NAME
 	      + " text not null," + COLUMN_DATE
-	      + " test not null);";
+	      + " text not null);";
 
-	public WalletsController(Context _context, LogOutCurrent _logOut) {
+	public WalletsController(Context _context) {
 		super(_context, DATABASE_NAME, null, DATABASE_VERSION);
 
-		databaseW = this.getWritableDatabase();
-		databaseR = this.getReadableDatabase();
-		logOut = _logOut;
 		context = _context;
 	}
 
@@ -69,9 +65,14 @@ public class WalletsController extends SQLiteOpenHelper {
 	
 	public interface walletsControllerListener{
 		public void insertWalletsAsyncComplete();
+		// 1 == Add Success
+		// 0 == Empty Result
+		// -1 == Null Result -> due to bad access token(s)
+		public void getWalletComplete(Integer result);
 	}
 	
 	protected void insertWallets(ArrayList<Wallet> wallets){
+		SQLiteDatabase databaseW = this.getWritableDatabase();
 		for(Integer i = 0; i < wallets.size(); i++){
 			Wallet curWallet = wallets.get(i);
 			ContentValues values = new ContentValues();
@@ -85,13 +86,17 @@ public class WalletsController extends SQLiteOpenHelper {
 				Log.i("Wallet Constraint Exception", curWallet.getID() + " duplicate");
 			}
 		}
+		databaseW.close();
 	}
 	
 	public void removeAll(){
+		SQLiteDatabase databaseW = this.getWritableDatabase();
 		databaseW.delete(TABLE_WALLETS, null, null);
+		databaseW.close();
 	}
 	
 	public ArrayList<String> getWalletNames(){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
 				COLUMN_NAME
 		};
@@ -106,15 +111,51 @@ public class WalletsController extends SQLiteOpenHelper {
             {
                  str.add( cursor.getString(cursor.getColumnIndex(COLUMN_NAME)) );
             }
+            databaseR.close();
             return str;
         }
         else
         {
+        	databaseR.close();
+            return null;
+        }
+	}
+	
+	public ArrayList<Wallet> getWallets(){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+		String[] columns = {
+				COLUMN_ID,
+				COLUMN_NAME,
+				COLUMN_DATE
+		};
+		
+		Cursor cursor = databaseR.query(TABLE_WALLETS, columns, null, null, null, null, null);
+		
+		if(cursor.getCount() >0)
+        {
+			ArrayList<Wallet> wallet = new ArrayList<Wallet>();
+           
+            while (cursor.moveToNext())
+            {
+                 wallet.add( new Wallet(
+                		 cursor.getInt(cursor.getColumnIndex(COLUMN_ID)),
+                		 cursor.getString(cursor.getColumnIndex(COLUMN_NAME)),
+                		 cursor.getString(cursor.getColumnIndex(COLUMN_DATE)) 
+                		 )
+                 );
+            }
+            databaseR.close();
+            return wallet;
+        }
+        else
+        {
+        	databaseR.close();
             return null;
         }
 	}
 	
 	public ArrayList<Integer> getWalletIds(){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
 				COLUMN_ID
 		};
@@ -129,15 +170,18 @@ public class WalletsController extends SQLiteOpenHelper {
             {
                  integ.add( cursor.getInt(cursor.getColumnIndex(COLUMN_ID)) );
              }
+            databaseR.close();
             return integ;
         }
         else
         {
+        	databaseR.close();
             return null;
         }
 	}
 	
 	public Integer getWalletIdFromName(String name){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
 				COLUMN_ID
 		};
@@ -157,17 +201,50 @@ public class WalletsController extends SQLiteOpenHelper {
             {
                  id = cursor.getInt(cursor.getColumnIndex(COLUMN_ID));
              }
+            databaseR.close();
             return id;
         }
         else
         {
+        	databaseR.close();
             return 0;
         }
 	}
+	
+	public String getWalletNameFromId(Integer wallet_id){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+		String[] columns = {
+				COLUMN_NAME
+		};
+		
+		String whereClause = "id = ?";
+		String[] whereArgs = new String[]{
+				wallet_id.toString()
+		};
+		
+		Cursor cursor = databaseR.query(TABLE_WALLETS, columns, whereClause, whereArgs, null, null, null);
+		
+		if(cursor.getCount() >0)
+        {
+            String name = "";
+            
+            while (cursor.moveToNext())
+            {
+                 name = cursor.getString(cursor.getColumnIndex(COLUMN_NAME));
+             }
+            databaseR.close();
+            return name;
+        }
+        else
+        {
+        	databaseR.close();
+            return "";
+        }
+	}
 
-	public void getWalletsAndInsert(Integer userID, final DBhttpRequest httpRequest,
+	public void findWallets(Integer userID, final DBhttpRequest httpRequest,
 			final String public_token, final String private_tokenH, final String _timeStamp){
-		GetWallets getWallets = new GetWallets(httpRequest, userID, public_token, private_tokenH, _timeStamp);
+		GetWallets getWallets = new GetWallets(httpRequest, this.getWalletIds(), userID, public_token, private_tokenH, _timeStamp);
 		
 	   	getWallets.setWalletsListener(new getWalletsListener(){
 
@@ -179,12 +256,23 @@ public class WalletsController extends SQLiteOpenHelper {
 
 			@Override
 			public void getWalletsComplete(final ArrayList<Wallet> _wallets) {
+				Integer result;
 				if(_wallets != null){
-					insertWalletsAsync(_wallets);
+					if(_wallets.get(0).getID() == -1 && _wallets.get(0).getName() == "-1" && _wallets.get(0).getDate() == "-1"){
+						Log.i("WalletsController", "Empty Result");
+						result = 0;
+					}
+					else{
+						insertWalletsAsync(_wallets);
+						result = 1;
+					}
 				}
 				else{
-					logOut.logOut(context, httpRequest, context.getString(R.string.logOutURL), public_token, private_tokenH, _timeStamp);
+					Log.i("WalletsController", "result is null -> possibly should log out");
+					result = -1;
+					//logOut.logOut(context, httpRequest, context.getString(R.string.logOutURL), public_token, private_tokenH, _timeStamp);
 				}
+				listener.getWalletComplete(result);
 			}
 
 			@Override
@@ -194,7 +282,12 @@ public class WalletsController extends SQLiteOpenHelper {
 			}
 	   		
 	   	});
-	   	getWallets.execute(context.getString(R.string.getWalletsURL));
+	   	if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.HONEYCOMB) {
+	   		getWallets.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, context.getString(R.string.getWalletsURL));
+	   	}
+	   	else {
+	   		getWallets.execute(context.getString(R.string.getWalletsURL));
+	   	}
 	}
 	
 	protected void insertWalletsAsync(final ArrayList<Wallet> wallets){

@@ -15,6 +15,7 @@
     <string name="getUserURL">http://whereone.com/GroupWalletCake/Users/getUser</string>
     <string name="getWalletRelationsURL">http://whereone.com/GroupWalletCake/WalletRelations/getWalletRelations</string>
     <string name="getWalletsURL">http://whereone.com/GroupWalletCake/WalletRelations/getWallets</string>
+    <string name="getRecordsURL">http://whereone.com/GroupWalletCake/Transactions/getTransactions</string>
     <string name="insertRecordURL">http://whereone.com/GroupWalletCake/Transactions/addRemote</string>
     <string name="oweButton">They paid</string>
     <string name="owedButton">I paid</string>
@@ -27,5 +28,17 @@
     <string name="cancelRecord">Cancel</string>
     <string name="logout">logout</string>
     <string name="title_activity_quick_pay_fragment">QuickPayFragment</string>
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
+    <string-array name="options_array">
+        <item>Profile</item>
+        <item>QucikPay</item>
+        <item>Transactions</item>
+        <item>Wallets</item>
+        <item>Relationships</item>
+        <item>Logout</item>
+    </string-array>
+        <string name="newWallet">New Wallet</string>
+        <string name="addUserToWallet">Add Person to Wallet</string>
 
 </resources>
