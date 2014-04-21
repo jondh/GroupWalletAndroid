@@ -4,11 +4,8 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.ProgressDialog;
@@ -29,18 +26,20 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioGroup;
+import android.widget.TextView;
 
+import com.whereone.groupWallet.R;
+import com.whereone.groupWallet.RecordConfirmDialog;
+import com.whereone.groupWallet.RecordConfirmDialog.onSelect;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
 import com.whereone.groupWallet.controllers.TransactionsController;
-import com.whereone.groupWallet.controllers.TransactionsController.transactionsControllerListener;
+import com.whereone.groupWallet.controllers.TransactionsController.TransactionInsertListener;
 import com.whereone.groupWallet.controllers.UsersController;
 import com.whereone.groupWallet.controllers.WalletRelationsController;
 import com.whereone.groupWallet.controllers.WalletsController;
+import com.whereone.groupWallet.models.Profile;
 import com.whereone.groupWallet.models.User;
-import com.whereone.groupwalletcake.LogOutCurrent;
-import com.whereone.groupwalletcake.R;
-import com.whereone.groupwalletcake.RecordConfirmDialog;
-import com.whereone.groupwalletcake.RecordConfirmDialog.onSelect;
+import com.whereone.groupWallet.models.WalletRelation;
 
 public class QuickPayFragment extends Fragment {
 
@@ -53,13 +52,14 @@ public class QuickPayFragment extends Fragment {
 	Context context;
 	
 	private SelfListener selfListener;
+	private QuickPayListener listener;
 	
 	public void walletsUpdated(){
 		if(selfListener != null){
 			selfListener.walletsUpdated();
 		}
 	}
-	public void walletRelationsUpdated(ArrayList<Integer> newRelations){
+	public void walletRelationsUpdated(ArrayList<WalletRelation> newRelations){
 		if(selfListener != null){
 			selfListener.walletRelationsUpdated(newRelations);
 		}
@@ -76,38 +76,47 @@ public class QuickPayFragment extends Fragment {
 	
 	private interface SelfListener{
 		public void walletsUpdated();
-		public void walletRelationsUpdated(ArrayList<Integer> newRelations);
+		public void walletRelationsUpdated(ArrayList<WalletRelation> newRelations);
 		public void userUpdated(Integer userID);
 	}
 	
-	@SuppressLint("SimpleDateFormat")
+	public void setQuickPayListener(QuickPayListener listener){
+		this.listener = listener;
+	}
+	
+	public interface QuickPayListener{
+		public void insertedRecord(Integer result);
+	}
+	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.fragment_quick_pay, null);
-		final DBhttpRequest httpRequest = new DBhttpRequest();
+		
 		context = getActivity();
 		setupUI(view.findViewById(R.id.fragment_quick_pay_layout), context);
 		final ProgressDialog mPDialog = new ProgressDialog(context);
 		
 		final SharedPreferences profile = context.getSharedPreferences("com.whereone.groupWallet.profile", Context.MODE_PRIVATE);
 		
-		final LogOutCurrent logOut = new LogOutCurrent(profile, null, null, null, null);
+		final TransactionsController transactionsController = TransactionsController.getInstance();
+		final WalletsController walletsController = WalletsController.getInstance();
+		final UsersController usersController = UsersController.getInstance();
+		final WalletRelationsController walletRelationsController = WalletRelationsController.getInstance();
 		
-		final WalletsController walletTable = new WalletsController(context);
-		final WalletRelationsController walletRelationTable = new WalletRelationsController(context);
-		final UsersController userTable = new UsersController(context);
-		final TransactionsController transactionController = new TransactionsController(context, logOut);
+		final DBhttpRequest httpRequest = DBhttpRequest.getInstance();
 		
+		final Profile profileL = Profile.getInstance();
 		
 		userFind = (AutoCompleteTextView) view.findViewById(R.id.userAuto);
 		walletFind = (AutoCompleteTextView) view.findViewById(R.id.walletAuto);
 		final RadioGroup whoPay = (RadioGroup) view.findViewById(R.id.whoPayQuickPay);
 		final EditText amount = (EditText) view.findViewById(R.id.amountQuickPay);
 		final EditText comments = (EditText) view.findViewById(R.id.commentsQuickPay);
+		final TextView errorMessage = (TextView) view.findViewById(R.id.quickPay_error);
+		errorMessage.setText("");
 		Button submit = (Button) view.findViewById(R.id.submitQuickPay);
-		Button logoutButton = (Button) view.findViewById(R.id.logoutQuickPay);
 		
-		wallets = walletTable.getWalletNames();
+		wallets = walletsController.getWalletNames();
 		if(wallets != null){
 			ArrayAdapter<String> adapterWallets = new ArrayAdapter<String>(context, R.layout.list_item, wallets);
 		   	walletFind.setAdapter(adapterWallets);
@@ -120,7 +129,7 @@ public class QuickPayFragment extends Fragment {
 
 			@Override
 			public void walletsUpdated() {
-				wallets = walletTable.getWalletNames();
+				wallets = walletsController.getWalletNames();
 				if(wallets != null){
 					getActivity().runOnUiThread(new Runnable(){
 
@@ -136,16 +145,16 @@ public class QuickPayFragment extends Fragment {
 			}
 
 			@Override
-			public void walletRelationsUpdated(ArrayList<Integer> newRelations) {
+			public void walletRelationsUpdated(ArrayList<WalletRelation> newRelations) {
 				for(int i = 0; i < newRelations.size(); i++){
-					if(newRelations.get(i) == selectedWallet){
-						final Integer userID = walletRelationTable.getUserFromId(newRelations.get(i));
-						if(userTable.containsId(userID)){
+					if(newRelations.get(i).getWalletID() == selectedWallet){
+						final Integer userID = walletRelationsController.getUserFromId(newRelations.get(i).getID());
+						if(usersController.containsId(userID)){
 							getActivity().runOnUiThread(new Runnable(){
 
 								@Override
 								public void run() {
-									adapterUsers.add(userTable.getUserFromId(userID));
+									adapterUsers.add(usersController.getUserNameFromId(userID));
 									adapterUsers.notifyDataSetChanged();
 								}
 								
@@ -157,9 +166,9 @@ public class QuickPayFragment extends Fragment {
 
 			@Override
 			public void userUpdated(Integer userID) {
-				if( walletRelationTable.containsUser(selectedWallet, userID) ){
+				if( walletRelationsController.containsUser(selectedWallet, userID) ){
 					if( !users.contains(userID)){
-						users.add(userTable.getUserFromId(userID));
+						users.add(usersController.getUserNameFromId(userID));
 						getActivity().runOnUiThread(new Runnable(){
 							@Override
 							public void run() {
@@ -229,10 +238,10 @@ public class QuickPayFragment extends Fragment {
 	               }
 	               else{
 	            	   userFind.setAdapter(null);
-	            	   selectedWallet = walletTable.getWalletIdFromName( walletFind.getText().toString() );
-	            	   ArrayList<Integer> tempUserIds = walletRelationTable.getUsersForWallet(selectedWallet);
+	            	   selectedWallet = walletsController.getWalletIdFromName( walletFind.getText().toString() );
+	            	   ArrayList<Integer> tempUserIds = walletRelationsController.getUsersForWallet(selectedWallet, profileL.getUserID(), 1);
 	            	   if( tempUserIds != null ){
-		            	   final ArrayList<String> temp = userTable.getUsersFromIds( tempUserIds );
+		            	   final ArrayList<String> temp = usersController.getUsersFromIds( tempUserIds );
 		            	   users.clear(); users.addAll(temp);
 		            	   
 		            	   getActivity().runOnUiThread(new Runnable(){
@@ -244,7 +253,7 @@ public class QuickPayFragment extends Fragment {
 			   		            	if(userFind.hasFocus()){
 			   		            		userFind.showDropDown();
 			   		            	}
-			   		            	if(!walletRelationTable.containsUser(selectedWallet, userTable.getIdFromUserName( userFind.getText().toString() ))){
+			   		            	if(!walletRelationsController.containsUser(selectedWallet, usersController.getIdFromUserName( userFind.getText().toString() ))){
 			   		            		userFind.setText("");
 			   		            	}
 			   					}
@@ -283,16 +292,17 @@ public class QuickPayFragment extends Fragment {
 				       amount.removeTextChangedListener(this);
 
 				       String cleanString = s.toString().replaceAll("[$,.]", "");
-
-				       double parsed = Double.parseDouble(cleanString);
-				       String formated = NumberFormat.getCurrencyInstance().format((parsed/100));
-
-				       current = formated;
-				       amount.setText(formated);
-				       amount.setSelection(formated.length());
-
-				       amount.addTextChangedListener(this);
-				    }
+				       if(cleanString != ""){
+					       double parsed = Double.parseDouble(cleanString);
+					       String formated = NumberFormat.getCurrencyInstance().format((parsed/100));
+	
+					       current = formated;
+					       amount.setText(formated);
+					       amount.setSelection(formated.length());
+	
+					       amount.addTextChangedListener(this);
+				       }
+				 }
 				
 			}
 			
@@ -306,8 +316,9 @@ public class QuickPayFragment extends Fragment {
 				System.out.println(amountNoCash);
 				if(amountNoCash != ""){
 					final Double amountD = Double.parseDouble(amountNoCash);
+					
 					final String commentsText = comments.getText().toString();
-					final User user = userTable.getUserFromUserName( userFind.getText().toString() );
+					final User user = usersController.getUserFromUserName( userFind.getText().toString() );
 					if(user != null){
 						RecordConfirmDialog recordConfirm = RecordConfirmDialog.newInstance(
 								user.getFirstName(), user.getLastName(), user.getUserName(), amountCash, owe);
@@ -318,18 +329,32 @@ public class QuickPayFragment extends Fragment {
 
 							@Override
 							public void comfirmPressed() {
-								SimpleDateFormat s = new SimpleDateFormat("ddMMyyyyhhmmss");
-								String currentDate = s.format(new Date());
-								try {
-									transactionController.insert((Integer)profile.getInt("id", 0), user.getUserID(), amountD, selectedWallet, commentsText, owe, httpRequest, mPDialog,
-											profile.getString("publicToken", ""), computeHash((profile.getString("privateToken", "") + currentDate)), currentDate);
-								} catch (NoSuchAlgorithmException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								} catch (UnsupportedEncodingException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
+								
+								transactionsController.setTransactionInsertListener(new TransactionInsertListener(){
+									
+									@Override
+									public void insertComplete(Integer result) {
+										if(result == -2){
+											errorMessage.setText("Timeout: record not inserted");
+										}
+										else if(result == -3){
+											errorMessage.setText("Failure: record not inserted :(");
+										}
+										else{
+											errorMessage.setText("");
+											userFind.setText("");
+											walletFind.setText("");
+											whoPay.clearCheck();
+											amount.setText("0.00");
+											comments.setText("");
+											listener.insertedRecord(result);
+										}
+									}
+								
+								});
+								
+								transactionsController.insert(httpRequest, profileL, (Integer)profile.getInt("id", 0), user.getUserID(), amountD, selectedWallet, commentsText, owe, mPDialog);
+								
 							}
 
 							@Override
@@ -338,6 +363,9 @@ public class QuickPayFragment extends Fragment {
 							}
 							
 						});
+					}
+					else{
+						System.out.println("NULL USR");
 					}
 				}
 			}
@@ -353,44 +381,6 @@ public class QuickPayFragment extends Fragment {
 			}
 		});
 		
-		logoutButton.setOnClickListener( new View.OnClickListener(){
-
-			@Override
-			public void onClick(View arg0) {
-				SimpleDateFormat s = new SimpleDateFormat("ddMMyyyyhhmmss");
-				String currentDate = s.format(new Date());
-				try {
-					logOut.logOut(getActivity(), httpRequest,
-							profile.getString("publicToken", ""), computeHash((profile.getString("privateToken", "") + currentDate)), currentDate);
-				} catch (NoSuchAlgorithmException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			
-		});
-		
-		transactionController.setTransactionsControllerListener(new transactionsControllerListener(){
-	
-			@Override
-			public void insertComplete() {
-				userFind.setText("");
-				walletFind.setText("");
-				whoPay.clearCheck();
-				amount.setText("0.00");
-				comments.setText("");
-			}
-
-			@Override
-			public void getComplete(Integer result) {
-				// TODO Auto-generated method stub
-				
-			}
-		
-		});
 			
         return view;
 	}

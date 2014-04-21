@@ -7,7 +7,7 @@
  *  Output: Integer amount for the logged in userID -> 0 or negative if log in failed
  *  Implementation:
  *  
-	   	LogOut LogOut = new LogOut(DBhttpRequest, Integer userId);
+	   	LogOut LogOut = new LogOut();
 	   	LogOut.setLogOutListener(new LogOutListener(){
 	   		@Override
 	   		public void LogOutComplete(Boolean result){
@@ -33,21 +33,18 @@ import org.apache.http.message.BasicNameValuePair;
 import android.os.AsyncTask;
 
 import com.whereone.groupWallet.controllers.DBhttpRequest;
+import com.whereone.groupWallet.models.Profile;
 
 public class LogOut extends AsyncTask<String, Void, Boolean> {
-	private DBhttpRequest httpRequest;
+
 	private LogOutListener listener;
-	private Integer userID;
-	private String publicToken;
-	private String privateToken;
-	private String timeStamp;
 	
-	public LogOut(DBhttpRequest _httpRequest, Integer _user_id, String public_token, String private_tokenH, String _timeStamp){
-		httpRequest = _httpRequest;
-		userID = _user_id;
-		publicToken = public_token;
-		privateToken = private_tokenH;
-		timeStamp = _timeStamp;
+	private DBhttpRequest httpRequest;
+	private Profile profile;
+	
+	public LogOut(DBhttpRequest httpRequest, Profile profile){
+		this.httpRequest = httpRequest;
+		this.profile = profile;
 	}
 	
 	public void setLogOutListener(LogOutListener _listener) {
@@ -59,10 +56,10 @@ public class LogOut extends AsyncTask<String, Void, Boolean> {
 		
 		String url = arg0[0];
 		ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-		nameValuePairs.add(new BasicNameValuePair("user_id",userID.toString()));
-		nameValuePairs.add(new BasicNameValuePair("public_token", publicToken));
-		nameValuePairs.add(new BasicNameValuePair("private_token", privateToken));
-		nameValuePairs.add(new BasicNameValuePair("timeStamp", timeStamp));
+		nameValuePairs.add(new BasicNameValuePair("user_id", profile.getUserID().toString()));
+		nameValuePairs.add(new BasicNameValuePair("public_token", profile.getPublicToken()));
+		nameValuePairs.add(new BasicNameValuePair("private_token", profile.hashedPrivate()));
+		nameValuePairs.add(new BasicNameValuePair("timeStamp", profile.getCurrentDate()));
 		String result = httpRequest.sendRequest(nameValuePairs, url);
 		
 		System.out.println(result);

@@ -7,10 +7,13 @@
 
 package com.whereone.groupWallet.models;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class Record {
 	private Integer id;
@@ -87,6 +90,92 @@ public class Record {
 		this.date = dateFromString(this.dateTime);
 	}
 	
+	public String getFormattedDate(){
+		if(date == null) findDate();
+		Calendar cal = Calendar.getInstance();
+		Calendar now = Calendar.getInstance();
+    	TimeZone tz = TimeZone.getDefault();
+    	TimeZone pacific = TimeZone.getTimeZone("America/Los_Angeles");
+    	
+    	DecimalFormat df = new DecimalFormat("00");
+    	
+    	cal.setTime(this.date);
+    	
+    	cal.add(Calendar.HOUR_OF_DAY, (tz.getRawOffset()-pacific.getRawOffset())/3600000 );
+    	
+    	if(cal.get(Calendar.YEAR) == now.get(Calendar.YEAR)){
+    		if(cal.get(Calendar.MONTH) == now.get(Calendar.MONTH)){
+    			if(cal.get(Calendar.DATE) == now.get(Calendar.DATE)){
+    				String am_pm = ((cal.get(Calendar.AM_PM)==1) ? "pm" : "am");
+    		    	Object hour = ((cal.get(Calendar.HOUR)==0) ? "12" : cal.get(Calendar.HOUR));
+    		    	
+    		    	return hour + ":" + df.format(cal.get(Calendar.MINUTE)) + am_pm;
+    			}
+    			else if((cal.get(Calendar.DATE) + 1) == now.get(Calendar.DATE)){
+    				String am_pm = ((cal.get(Calendar.AM_PM)==1) ? "pm" : "am");
+    		    	Object hour = ((cal.get(Calendar.HOUR)==0) ? "12" : cal.get(Calendar.HOUR));
+    		    	
+    		    	return "Yesterday, " + hour + am_pm;
+    			}
+    			else{
+    				return cal.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US) + " " + cal.get(Calendar.DATE);
+    			}
+    		}
+    		else{
+    			return cal.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US) + " " + cal.get(Calendar.DATE);
+    		}
+    	}
+    	else{
+    		return "diff "+ cal.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US) + " " + cal.get(Calendar.YEAR);
+    	}
+	}
+	
+	public String getFormattedLongDate(){
+		if(date == null) findDate();
+		Calendar cal = Calendar.getInstance();
+		Calendar now = Calendar.getInstance();
+    	TimeZone tz = TimeZone.getDefault();
+    	TimeZone pacific = TimeZone.getTimeZone("America/Los_Angeles");
+    	
+    	DecimalFormat df = new DecimalFormat("00");
+    	
+    	cal.setTime(this.date);
+    	
+    	cal.add(Calendar.HOUR_OF_DAY, (tz.getRawOffset()-pacific.getRawOffset())/3600000 );
+    	
+    	if(cal.get(Calendar.YEAR) == now.get(Calendar.YEAR)){
+    		if(cal.get(Calendar.MONTH) == now.get(Calendar.MONTH)){
+    			if(cal.get(Calendar.DATE) == now.get(Calendar.DATE)){
+    				String am_pm = ((cal.get(Calendar.AM_PM)==1) ? "pm" : "am");
+    		    	Object hour = ((cal.get(Calendar.HOUR)==0) ? "12" : cal.get(Calendar.HOUR));
+    		    	
+    		    	return "Today, " + hour + ":" + df.format(cal.get(Calendar.MINUTE)) + am_pm;
+    			}
+    			else if((cal.get(Calendar.DATE) + 1) == now.get(Calendar.DATE)){
+    				String am_pm = ((cal.get(Calendar.AM_PM)==1) ? "pm" : "am");
+    		    	Object hour = ((cal.get(Calendar.HOUR)==0) ? "12" : cal.get(Calendar.HOUR));
+    		    	
+    		    	return "Yesterday, " + hour + ":" + df.format(cal.get(Calendar.MINUTE)) + am_pm;
+    			}
+    			else{
+    				String am_pm = ((cal.get(Calendar.AM_PM)==1) ? "pm" : "am");
+    		    	Object hour = ((cal.get(Calendar.HOUR)==0) ? "12" : cal.get(Calendar.HOUR));
+    				return cal.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US) + " " + cal.get(Calendar.DATE) + " " + hour + ":" + df.format(cal.get(Calendar.MINUTE)) + am_pm + " " + cal.get(Calendar.YEAR);
+    			}
+    		}
+    		else{
+    			String am_pm = ((cal.get(Calendar.AM_PM)==1) ? "pm" : "am");
+		    	Object hour = ((cal.get(Calendar.HOUR)==0) ? "12" : cal.get(Calendar.HOUR));
+				return cal.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US) + " " + cal.get(Calendar.DATE) + " " + hour + ":" + df.format(cal.get(Calendar.MINUTE)) + am_pm + " " + cal.get(Calendar.YEAR);
+    		}
+    	}
+    	else{
+    		String am_pm = ((cal.get(Calendar.AM_PM)==1) ? "pm" : "am");
+	    	Object hour = ((cal.get(Calendar.HOUR)==0) ? "12" : cal.get(Calendar.HOUR));
+			return cal.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US) + " " + cal.get(Calendar.DATE) + " " + hour + ":" + df.format(cal.get(Calendar.MINUTE)) + am_pm + " " + cal.get(Calendar.YEAR);
+    	}
+	}
+	
 	private Date dateFromString(String _date){
 		SimpleDateFormat iso8601Format = new SimpleDateFormat(
 	            "yyyy-MM-dd HH:mm:ss", Locale.US);
@@ -105,7 +194,7 @@ public class Record {
 		public static Comparator<Record> DATE = new Comparator<Record>() {
 			@Override
 			public int compare(Record arg0, Record arg1) {
-				return (arg0.getDate().getTime() > arg1.getDate().getTime() ? -1 : 1); 
+				return (arg0.getDate().getTime() >= arg1.getDate().getTime() ? -1 : 1); 
 			}
         };
 	}

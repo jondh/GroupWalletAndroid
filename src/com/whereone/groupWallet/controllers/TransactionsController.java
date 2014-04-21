@@ -13,16 +13,18 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
 
+import com.whereone.groupWallet.GetRecords;
+import com.whereone.groupWallet.GetRecords.getRecordsListener;
+import com.whereone.groupWallet.InsertRecord;
+import com.whereone.groupWallet.InsertRecord.insertRecordListener;
+import com.whereone.groupWallet.R;
+import com.whereone.groupWallet.models.Profile;
 import com.whereone.groupWallet.models.Record;
-import com.whereone.groupwalletcake.GetRecords;
-import com.whereone.groupwalletcake.GetRecords.getRecordsListener;
-import com.whereone.groupwalletcake.InsertRecord;
-import com.whereone.groupwalletcake.InsertRecord.insertRecordListener;
-import com.whereone.groupwalletcake.LogOutCurrent;
-import com.whereone.groupwalletcake.R;
 
 public class TransactionsController extends SQLiteOpenHelper {
-	private transactionsControllerListener listener;
+	private TransactionsGetListener getListener;
+	private TransactionInsertListener insertListener;
+	private static TransactionsController instance;
 	
 	public static final String TABLE_TRANSACTIONS = "transactions";
 	public static final String COLUMN_ID = "id";
@@ -33,7 +35,6 @@ public class TransactionsController extends SQLiteOpenHelper {
 	public static final String COLUMN_COMMENTS = "comments";
 	public static final String COLUMN_DATETIME = "dateTime";
 	
-	private LogOutCurrent logOut;
 	private Context context;
 
 	private static final String DATABASE_NAME = "transactions.db";
@@ -50,13 +51,23 @@ public class TransactionsController extends SQLiteOpenHelper {
 	      + " text not null," + COLUMN_DATETIME
 	      + " text not null);";
 	
-	public TransactionsController(Context _context, LogOutCurrent _logOut){
+	
+	private TransactionsController(Context _context){
 		super(_context, DATABASE_NAME, null, DATABASE_VERSION);
 		
-		logOut = _logOut;
-		context = _context;
 	}
 	
+	public static void init(Context _context){
+		if(instance == null){
+			instance = new TransactionsController(_context);
+			instance.context = _context;
+		}
+	}
+	
+	public static TransactionsController getInstance(){
+		return instance;
+	}
+
 	@Override
 	public void onCreate(SQLiteDatabase database) {
 		database.execSQL(DATABASE_CREATE);
@@ -71,20 +82,31 @@ public class TransactionsController extends SQLiteOpenHelper {
 		onCreate(database);
 	}
 	
-	public void setTransactionsControllerListener(transactionsControllerListener _listener) {
-        this.listener = _listener;
+	public void setTransactionsGetListener(TransactionsGetListener _listener) {
+        instance.getListener = _listener;
     }
 	
-	public interface transactionsControllerListener{
-		public void insertComplete();
+	public interface TransactionsGetListener{
 		// 1 == Add Success
 		// 0 == Empty Result
 		// -1 == Null Result -> due to bad access token(s)
+		// -2 == Timeout
+		// -3 == UnknownHost
 		public void getComplete(Integer result);
 	}
 	
+	public void setTransactionInsertListener(TransactionInsertListener listener){
+		instance.insertListener = listener;
+	}
+	
+	public interface TransactionInsertListener{
+		public void insertComplete(Integer result);
+	}
+	
 	public void removeAll(){
-		
+		SQLiteDatabase databaseW = this.getWritableDatabase();
+		databaseW.delete(TABLE_TRANSACTIONS, null, null);
+		databaseW.close();
 	}
 	
 	protected void insertRecords(ArrayList<Record> records){
@@ -148,6 +170,52 @@ public class TransactionsController extends SQLiteOpenHelper {
 		};
 		
 		Cursor cursor = databaseR.query(TABLE_TRANSACTIONS, columns, null, null, null, null, null);
+		
+		if(cursor.getCount() >0)
+        {
+			ArrayList<Record> records = new ArrayList<Record>();
+           
+            while (cursor.moveToNext())
+            {
+            	Record temp = new Record();
+                temp.setID( cursor.getInt(cursor.getColumnIndex(COLUMN_ID) ));
+                temp.setOweId( cursor.getInt(cursor.getColumnIndex(COLUMN_OWE) ));
+                temp.setOwedId( cursor.getInt(cursor.getColumnIndex(COLUMN_OWED) ));
+                temp.setAmount( cursor.getDouble(cursor.getColumnIndex(COLUMN_AMOUNT) ));
+                temp.setWalletId( cursor.getInt(cursor.getColumnIndex(COLUMN_WALLET) ));
+                temp.setComments( cursor.getString(cursor.getColumnIndex(COLUMN_COMMENTS) ));
+                temp.setDateTime( cursor.getString(cursor.getColumnIndex(COLUMN_DATETIME) ));
+                records.add(temp);
+            }
+            databaseR.close();
+            return records;
+        }
+        else
+        {
+        	databaseR.close();
+            return null;
+        }
+	}
+	
+	public ArrayList<Record> getRecordsForUser(Integer userID){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+		String[] columns = {
+				COLUMN_ID,
+				COLUMN_OWE,
+				COLUMN_OWED,
+				COLUMN_AMOUNT,
+				COLUMN_WALLET,
+				COLUMN_COMMENTS,
+				COLUMN_DATETIME
+		};
+		
+		String whereClause = "oweUID = ? OR owedUID = ?";
+		String[] whereArgs = new String[]{
+				userID.toString(),
+				userID.toString()
+		};
+		
+		Cursor cursor = databaseR.query(TABLE_TRANSACTIONS, columns, whereClause, whereArgs, null, null, null);
 		
 		if(cursor.getCount() >0)
         {
@@ -256,6 +324,32 @@ public class TransactionsController extends SQLiteOpenHelper {
 		return 0.0;
 	}
 	
+	public Double getWalletTotal(Integer walletId){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+		String[] columns = {
+				COLUMN_AMOUNT
+		};
+		
+		String whereClause = "walletID = ?";
+		String[] whereArgs = new String[]{
+				walletId.toString()
+		};
+			
+		Cursor cursor = databaseR.query(TABLE_TRANSACTIONS, columns, whereClause, whereArgs, null, null, null);
+			
+		if(cursor.getCount() >0)
+        {
+			Double amount = 0.0;
+			while( cursor.moveToNext() ){
+        	   amount += cursor.getDouble(cursor.getColumnIndex(COLUMN_AMOUNT));
+			}
+			databaseR.close();
+			return amount;
+        }
+		databaseR.close();
+		return 0.0;
+	}
+	
 	public Double getOweUserWallet(Integer oweId, Integer owedId, Integer walletId){
 		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
@@ -336,11 +430,9 @@ public class TransactionsController extends SQLiteOpenHelper {
 		return 0.0;
 	}
 	
-	public void insert(Integer _userID, Integer _otherUID, Double _amount, Integer _walletID, String _Comments, Boolean _owe, final DBhttpRequest _httpRequest, final ProgressDialog mPDialog,
-			final String public_token, final String private_tokenH, final String _timeStamp){
+	public void insert(DBhttpRequest httpRequest, Profile profile, Integer _userID, Integer _otherUID, Double _amount, Integer _walletID, String _Comments, Boolean _owe, final ProgressDialog mPDialog){
 		
-		InsertRecord insertRecord = new InsertRecord(_userID, _otherUID, _amount, _walletID, _Comments,
-				_owe, _httpRequest, public_token, private_tokenH, _timeStamp);
+		InsertRecord insertRecord = new InsertRecord(httpRequest, profile, _userID, _otherUID, _amount, _walletID, _Comments, _owe);
 		
 		mPDialog.setMessage("Loading...");
 	    mPDialog.show(); 
@@ -353,16 +445,25 @@ public class TransactionsController extends SQLiteOpenHelper {
 			}
 
 			@Override
-			public void insertRecordComplete(Boolean result) {
+			public void insertRecordComplete(Boolean result, String resultString) {
 				if(result){
-					System.out.println("SUCCESSFULLY inserted record");
 					mPDialog.hide(); 
-					listener.insertComplete();
+					System.out.println("SUCCESSFULLY inserted record");
+					instance.insertListener.insertComplete(1);
+					System.out.println("SUCCESSFULLY inserted record");
 				}
 				else{
-					System.out.println("Insert record FAILED");
+					if(resultString.contains("timeout")){
+						instance.insertListener.insertComplete(-2);
+					}
+					else if(resultString.contains("unknownHost")){
+						instance.insertListener.insertComplete(-3);
+					}
+					else{
+						instance.insertListener.insertComplete(-1);
+					}
+					System.out.println("Insert record FAILED : " + resultString);
 					mPDialog.hide(); 
-					logOut.logOut(context, _httpRequest, public_token, private_tokenH, _timeStamp);
 				}
 			}
 
@@ -374,17 +475,16 @@ public class TransactionsController extends SQLiteOpenHelper {
 	   		
 	   	});
 	   	if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.HONEYCOMB) {
-	   		insertRecord.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, context.getString(R.string.insertRecordURL));
+	   		insertRecord.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, instance.context.getString(R.string.insertRecordURL));
 	   	}
 	   	else {
-	   		insertRecord.execute(context.getString(R.string.insertRecordURL));
+	   		insertRecord.execute(instance.context.getString(R.string.insertRecordURL));
 	   	}
 	}
 	
-	public void findTransactions(ArrayList<Integer> wallet_ids, final DBhttpRequest httpRequest,
-			final String public_token, final String private_tokenH, final String _timeStamp){
+	public void findTransactions(DBhttpRequest httpRequest, Profile profile, ArrayList<Integer> wallet_ids){
 		if(wallet_ids == null) return;
-   		GetRecords getRecords = new GetRecords(httpRequest, wallet_ids, this.getRecordIds(), public_token, private_tokenH, _timeStamp);
+   		GetRecords getRecords = new GetRecords(httpRequest, profile, wallet_ids, this.getRecordIds());
 	    final TransactionsController transactionController = this;
    		
    		getRecords.setRecordsListener(new getRecordsListener(){
@@ -396,23 +496,36 @@ public class TransactionsController extends SQLiteOpenHelper {
 			}
 
 			@Override
-			public void getRecordsComplete(ArrayList<Record> records) {
+			public void getRecordsComplete(final ArrayList<Record> records, String resultType) {
 				Integer result;
 				if(records != null){
-					if(records.get(0).getID() == -1 && records.get(0).getOwedId() == -1 && records.get(0).getOwedId() == -1){
-						Log.i("TransactionsController", "Empty Result");
-						result = 0;
-					}
-					else{
-						transactionController.insertRecords(records);
-						result = 1;
-					}
+					new Thread(){
+						
+						@Override
+						public void run(){
+							transactionController.insertRecords(records);
+							instance.getListener.getComplete(1);
+						}
+						
+					}.start();
+					result = 1;
 				}
 				else{
-					Log.i("TransactionsController", "result is null -> possibly should log out");
-					result = -1;
+					if(resultType.contains("timeout")){
+						result = -2;
+					}
+					else if(resultType.contains("empty")){
+						result = 0;
+					}
+					else if(resultType.contains("unknownHost")){
+						result = -3;
+					}
+					else{
+						result = -1;
+					}
+					instance.getListener.getComplete(result);
 				}
-				listener.getComplete(result);
+				
 			}
 
 			@Override
@@ -422,7 +535,7 @@ public class TransactionsController extends SQLiteOpenHelper {
 			}
 	   		
 	   	});
-	   	getRecords.execute(context.getString(R.string.getRecordsURL));
+	   	getRecords.execute(instance.context.getString(R.string.getRecordsURL));
 	   	
 	}
 }

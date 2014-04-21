@@ -33,21 +33,18 @@ import org.apache.http.message.BasicNameValuePair;
 import android.os.AsyncTask;
 
 import com.whereone.groupWallet.controllers.DBhttpRequest;
+import com.whereone.groupWallet.models.Profile;
 
 public class LogInStatus extends AsyncTask<String, Void, Boolean> {
 	private DBhttpRequest httpRequest;
+	private Profile profile;
 	private LogInStatusListener listener;
-	private Integer userID;
-	private String publicToken;
-	private String privateToken;
-	private String timeStamp;
 	
-	public LogInStatus(DBhttpRequest _httpRequest, Integer _user_id, String public_token, String private_tokenH, String _timeStamp){
+	private String resultType;
+	
+	public LogInStatus(DBhttpRequest _httpRequest, Profile profile){
 		httpRequest = _httpRequest;
-		userID = _user_id;
-		publicToken = public_token;
-		privateToken = private_tokenH;
-		timeStamp = _timeStamp;
+		this.profile = profile;
 	}
 	
 	public void setLogInStatusListener(LogInStatusListener _listener) {
@@ -59,10 +56,10 @@ public class LogInStatus extends AsyncTask<String, Void, Boolean> {
 		
 		String url = arg0[0];
 		ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-		nameValuePairs.add(new BasicNameValuePair("user_id",userID.toString()));
-		nameValuePairs.add(new BasicNameValuePair("public_token", publicToken));
-		nameValuePairs.add(new BasicNameValuePair("private_token", privateToken));
-		nameValuePairs.add(new BasicNameValuePair("timeStamp", timeStamp));
+		nameValuePairs.add(new BasicNameValuePair("user_id", profile.getUserID().toString()));
+		nameValuePairs.add(new BasicNameValuePair("public_token", profile.getPublicToken()));
+		nameValuePairs.add(new BasicNameValuePair("private_token", profile.hashedPrivate()));
+		nameValuePairs.add(new BasicNameValuePair("timeStamp", profile.getCurrentDate()));
 		String result = httpRequest.sendRequest(nameValuePairs, url);
 		
 		System.out.println(result);
@@ -70,12 +67,21 @@ public class LogInStatus extends AsyncTask<String, Void, Boolean> {
 		if(result.contains("success")){
 			return true;
 		}
-		else return false;
+		else if(result.contains("timeout")){
+			resultType = "timeout";
+		}
+		else if(result.contains("unknownHost")){
+			resultType = "unknownHost";
+		}
+		else{
+			resultType = "failure";
+		}
+		return false;
 	}
 
 	@Override
 	protected void onPostExecute(Boolean result) {
-		listener.LogInStatusComplete(result);
+		listener.LogInStatusComplete(result, resultType);
 	}
 
 	@Override
@@ -84,7 +90,7 @@ public class LogInStatus extends AsyncTask<String, Void, Boolean> {
 	}
 	
 	public interface LogInStatusListener{
-		public void LogInStatusComplete(Boolean _user);
+		public void LogInStatusComplete(Boolean result, String resultString);
 		public void LogInStatusCancelled();
 	}
 }

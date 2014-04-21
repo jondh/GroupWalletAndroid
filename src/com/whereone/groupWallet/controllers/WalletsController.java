@@ -12,14 +12,20 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
 
+import com.whereone.groupWallet.GetWallets;
+import com.whereone.groupWallet.GetWallets.getWalletsListener;
+import com.whereone.groupWallet.InsertWallet;
+import com.whereone.groupWallet.InsertWallet.InsertWalletListener;
+import com.whereone.groupWallet.R;
+import com.whereone.groupWallet.models.Profile;
 import com.whereone.groupWallet.models.Wallet;
-import com.whereone.groupwalletcake.GetWallets;
-import com.whereone.groupwalletcake.GetWallets.getWalletsListener;
-import com.whereone.groupwalletcake.R;
+import com.whereone.groupWallet.models.WalletRelation;
 
 public class WalletsController extends SQLiteOpenHelper {
 
 	private walletsControllerListener listener;
+	private WalletInviteListener inviteListener;
+	private static WalletsController instance;
 
 	private Context context;
 	
@@ -27,6 +33,7 @@ public class WalletsController extends SQLiteOpenHelper {
 	public static final String COLUMN_ID = "id";
 	public static final String COLUMN_NAME = "name";
 	public static final String COLUMN_DATE = "date";
+	public static final String COLUMN_USER_ID = "user_id";
 	
 
 	private static final String DATABASE_NAME = "wallets.db";
@@ -37,12 +44,23 @@ public class WalletsController extends SQLiteOpenHelper {
 	      + TABLE_WALLETS + "(" + COLUMN_ID
 	      + " integer primary key, " + COLUMN_NAME
 	      + " text not null," + COLUMN_DATE
-	      + " text not null);";
+	      + " text not null," + COLUMN_USER_ID 
+	      + " integer not null);";
 
-	public WalletsController(Context _context) {
+	private WalletsController(Context _context) {
 		super(_context, DATABASE_NAME, null, DATABASE_VERSION);
 
-		context = _context;
+	}
+	
+	public static void init(Context _context){
+		if(instance == null){
+			instance = new WalletsController(_context);
+			instance.context = _context;
+		}
+	}
+	
+	public static WalletsController getInstance(){
+		return instance;
 	}
 
 	@Override
@@ -60,15 +78,23 @@ public class WalletsController extends SQLiteOpenHelper {
 	}
 	
 	public void setWalletsControllerListener(walletsControllerListener _listener) {
-        this.listener = _listener;
+		instance.listener = _listener;
     }
 	
 	public interface walletsControllerListener{
-		public void insertWalletsAsyncComplete();
 		// 1 == Add Success
 		// 0 == Empty Result
 		// -1 == Null Result -> due to bad access token(s)
 		public void getWalletComplete(Integer result);
+		
+	}
+	
+	public void setWalletInviteListener(WalletInviteListener listener){
+		instance.inviteListener = listener;
+	}
+	
+	public interface WalletInviteListener{
+		public void getWalletInvitesComplete(Integer result);
 	}
 	
 	protected void insertWallets(ArrayList<Wallet> wallets){
@@ -79,6 +105,7 @@ public class WalletsController extends SQLiteOpenHelper {
 			values.put("id", curWallet.getID());
 			values.put("name", curWallet.getName());
 			values.put("date", curWallet.getDate());
+			values.put("user_id", curWallet.getUserID());
 			try{
 				databaseW.insertOrThrow(TABLE_WALLETS, null, values);
 			}
@@ -126,7 +153,8 @@ public class WalletsController extends SQLiteOpenHelper {
 		String[] columns = {
 				COLUMN_ID,
 				COLUMN_NAME,
-				COLUMN_DATE
+				COLUMN_DATE,
+				COLUMN_USER_ID
 		};
 		
 		Cursor cursor = databaseR.query(TABLE_WALLETS, columns, null, null, null, null, null);
@@ -140,7 +168,8 @@ public class WalletsController extends SQLiteOpenHelper {
                  wallet.add( new Wallet(
                 		 cursor.getInt(cursor.getColumnIndex(COLUMN_ID)),
                 		 cursor.getString(cursor.getColumnIndex(COLUMN_NAME)),
-                		 cursor.getString(cursor.getColumnIndex(COLUMN_DATE)) 
+                		 cursor.getString(cursor.getColumnIndex(COLUMN_DATE)),
+                		 cursor.getInt(cursor.getColumnIndex(COLUMN_USER_ID))
                 		 )
                  );
             }
@@ -152,6 +181,89 @@ public class WalletsController extends SQLiteOpenHelper {
         	databaseR.close();
             return null;
         }
+	}
+	
+	public Wallet getWalletFromId(Integer wallet_id){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+		String[] columns = {
+				COLUMN_ID,
+				COLUMN_NAME,
+				COLUMN_DATE,
+				COLUMN_USER_ID
+		};
+		
+		String whereClause = "id = ?";
+		String[] whereArgs = new String[]{
+				wallet_id.toString()
+		};
+		
+		Cursor cursor = databaseR.query(TABLE_WALLETS, columns, whereClause, whereArgs, null, null, null);
+		
+		if(cursor.getCount() >0)
+        {
+            
+            if (cursor.moveToNext())
+            {
+            	databaseR.close();
+            	return new Wallet(
+               		 cursor.getInt(cursor.getColumnIndex(COLUMN_ID)),
+               		 cursor.getString(cursor.getColumnIndex(COLUMN_NAME)),
+               		 cursor.getString(cursor.getColumnIndex(COLUMN_DATE)),
+               		 cursor.getInt(cursor.getColumnIndex(COLUMN_USER_ID))
+               		 );
+             }
+            databaseR.close();
+            return null;
+        }
+        else
+        {
+        	databaseR.close();
+            return null;
+        }
+	}
+
+	public ArrayList<Wallet> getWalletsUserID(Integer userID, WalletRelationsController walletRelationsController, Integer accept){
+	
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+		
+		ArrayList<Integer> walletIds = walletRelationsController.getWalletsForUser(userID, accept);
+		ArrayList<Wallet> wallets = new ArrayList<Wallet>();
+		
+		if(walletIds != null){
+			for(int i = 0; i < walletIds.size(); i++){
+			
+				String[] columns = {
+						COLUMN_ID,
+						COLUMN_NAME,
+						COLUMN_DATE,
+						COLUMN_USER_ID
+				};
+				
+				String whereClause = "id = ?";
+				String[] whereArgs = new String[]{
+						walletIds.get(i).toString()
+				};
+				
+				Cursor cursor = databaseR.query(TABLE_WALLETS, columns, whereClause, whereArgs, null, null, null);
+				
+				if(cursor.getCount() >0)
+		        {
+		            
+		            if (cursor.moveToNext())
+		            {
+		            	wallets.add( new Wallet(
+		               		 cursor.getInt(cursor.getColumnIndex(COLUMN_ID)),
+		               		 cursor.getString(cursor.getColumnIndex(COLUMN_NAME)),
+		               		 cursor.getString(cursor.getColumnIndex(COLUMN_DATE)),
+		               		 cursor.getInt(cursor.getColumnIndex(COLUMN_USER_ID))
+		               		 ) );
+		             }
+		            
+		        }
+			}
+		}
+		databaseR.close();
+        return wallets;
 	}
 	
 	public ArrayList<Integer> getWalletIds(){
@@ -177,6 +289,63 @@ public class WalletsController extends SQLiteOpenHelper {
         {
         	databaseR.close();
             return null;
+        }
+	}
+	
+	public Boolean containsWalletName(String name){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+		String[] columns = {
+				COLUMN_NAME
+		};
+		
+		String whereClause = "name LIKE ?";
+		String[] whereArgs = new String[]{
+				name
+		};
+		
+		Cursor cursor = databaseR.query(TABLE_WALLETS, columns, whereClause, whereArgs, null, null, null);
+		
+		if(cursor.getCount() >0)
+        {
+            
+            
+            while (cursor.moveToNext())
+            {
+                 System.out.println( cursor.getString(cursor.getColumnIndex(COLUMN_NAME)) );
+             }
+            databaseR.close();
+            return true;
+        }
+        else
+        {
+        	databaseR.close();
+            return false;
+        }
+	}
+	
+	public Integer getNumberWallets(){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+		String[] columns = {
+				COLUMN_ID
+		};
+		
+		Cursor cursor = databaseR.query(TABLE_WALLETS, columns, null, null, null, null, null);
+		
+		if(cursor.getCount() > 0)
+        {
+            Integer integ = 0;
+            
+            while (cursor.moveToNext())
+            {
+                 integ++;
+             }
+            databaseR.close();
+            return integ;
+        }
+        else
+        {
+        	databaseR.close();
+            return 0;
         }
 	}
 	
@@ -242,9 +411,8 @@ public class WalletsController extends SQLiteOpenHelper {
         }
 	}
 
-	public void findWallets(Integer userID, final DBhttpRequest httpRequest,
-			final String public_token, final String private_tokenH, final String _timeStamp){
-		GetWallets getWallets = new GetWallets(httpRequest, this.getWalletIds(), userID, public_token, private_tokenH, _timeStamp);
+	public void findWallets(DBhttpRequest httpRequest, final WalletRelationsController walletRelationsController, Profile profile, Integer userID){
+		GetWallets getWallets = new GetWallets(httpRequest, profile, this.getWalletIds(), userID, 1);
 		
 	   	getWallets.setWalletsListener(new getWalletsListener(){
 
@@ -255,24 +423,35 @@ public class WalletsController extends SQLiteOpenHelper {
 			}
 
 			@Override
-			public void getWalletsComplete(final ArrayList<Wallet> _wallets) {
+			public void getWalletsComplete(final ArrayList<Wallet> _wallets, ArrayList<WalletRelation> wrs, String resultString) {
 				Integer result;
-				if(_wallets != null){
-					if(_wallets.get(0).getID() == -1 && _wallets.get(0).getName() == "-1" && _wallets.get(0).getDate() == "-1"){
-						Log.i("WalletsController", "Empty Result");
+				if(_wallets != null || wrs != null){
+					if(_wallets != null){
+						instance.insertWallets(_wallets);
+					}
+					if(wrs != null){
+						walletRelationsController.insertWalletRelations(wrs);
+					}
+					instance.listener.getWalletComplete(1);
+				}
+				else{
+					if(resultString.contains("timeout")){
+						result = -2;
+					}
+					else if(resultString.contains("unknownHost")){
+						result = -3;
+					}
+					else if(resultString.contains("empty")){
 						result = 0;
 					}
 					else{
-						insertWalletsAsync(_wallets);
-						result = 1;
+						result = -1;
+					}
+					if(instance.listener != null){
+						instance.listener.getWalletComplete(result);
 					}
 				}
-				else{
-					Log.i("WalletsController", "result is null -> possibly should log out");
-					result = -1;
-					//logOut.logOut(context, httpRequest, context.getString(R.string.logOutURL), public_token, private_tokenH, _timeStamp);
-				}
-				listener.getWalletComplete(result);
+				
 			}
 
 			@Override
@@ -283,25 +462,119 @@ public class WalletsController extends SQLiteOpenHelper {
 	   		
 	   	});
 	   	if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.HONEYCOMB) {
-	   		getWallets.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, context.getString(R.string.getWalletsURL));
+	   		getWallets.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, instance.context.getString(R.string.getWalletsURL));
 	   	}
 	   	else {
-	   		getWallets.execute(context.getString(R.string.getWalletsURL));
+	   		getWallets.execute(instance.context.getString(R.string.getWalletsURL));
 	   	}
 	}
 	
-	protected void insertWalletsAsync(final ArrayList<Wallet> wallets){
-		final WalletsController walletTable = this;
-		class putWallets implements Runnable{
-			@Override
-			public void run(){
-				walletTable.insertWallets(wallets);
-				listener.insertWalletsAsyncComplete();
-			}
-		}
+	public void findWalletInvites(DBhttpRequest httpRequest, final WalletRelationsController walletRelationsController, Profile profile, Integer userID){
+		GetWallets getWallets = new GetWallets(httpRequest, profile, this.getWalletIds(), userID, 0);
 		
-		Thread insertWallets = new Thread(new putWallets());
-		insertWallets.start();
+	   	getWallets.setWalletsListener(new getWalletsListener(){
+
+			@Override
+			public void getWalletsPreExecute() {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void getWalletsComplete(final ArrayList<Wallet> _wallets, ArrayList<WalletRelation> wrs, String resultString) {
+				Integer result;
+				if(_wallets != null || wrs != null){
+					if(_wallets != null){
+						instance.insertWallets(_wallets);
+					
+						instance.inviteListener.getWalletInvitesComplete(1);
+						
+					}
+					if(wrs != null){
+						walletRelationsController.insertWalletRelations(wrs);
+					}
+				}
+				else{
+					if(resultString.contains("timeout")){
+						result = -2;
+					}
+					else if(resultString.contains("unknownHost")){
+						result = -3;
+					}
+					else if(resultString.contains("empty")){
+						result = 0;
+					}
+					else{
+						result = -1;
+					}
+					if(instance.listener != null){
+						instance.inviteListener.getWalletInvitesComplete(result);
+					}
+				}
+				
+			}
+
+			@Override
+			public void getWalletsCancelled() {
+				// TODO Auto-generated method stub
+				
+			}
+	   		
+	   	});
+	   	if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.HONEYCOMB) {
+	   		getWallets.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, instance.context.getString(R.string.getWalletsURL));
+	   	}
+	   	else {
+	   		getWallets.execute(instance.context.getString(R.string.getWalletsURL));
+	   	}
+	}
+	
+	public void insertPutWallet(DBhttpRequest httpRequest, Profile profile, String name, final WalletRelationsController walletRelationsController){
+		InsertWallet insertWallet = new InsertWallet(httpRequest, profile, name);
+		insertWallet.setInsertWalletListener(new InsertWalletListener(){
+
+			@Override
+			public void insertWalletPreExecute() {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void insertWalletComplete(Wallet wallet, WalletRelation walletR, String resultString) {
+				Integer result;
+				if(wallet != null && walletR != null){
+					ArrayList<Wallet> walletTemp = new ArrayList<Wallet>();
+					walletTemp.add(wallet);
+					
+					instance.insertWallets(walletTemp);
+					
+					ArrayList<WalletRelation> wrTemp = new ArrayList<WalletRelation>();
+					wrTemp.add(walletR);
+					walletRelationsController.insertWalletRelations(wrTemp);
+					result = 1;
+				}
+				else{
+					if(resultString.contains("timeout")){
+						result = -2;
+					}
+					else if(resultString.contains("unknownHost")){
+						result = -3;
+					}
+					else{
+						result = -1;
+					}
+				}
+				instance.listener.getWalletComplete(result);
+			}
+
+			@Override
+			public void insertWalletCancelled() {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		insertWallet.execute(context.getString(R.string.insertWalletURL));
 	}
 
 }

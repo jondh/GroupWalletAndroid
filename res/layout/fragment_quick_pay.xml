@@ -10,20 +10,12 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity" >
 
-    <AutoCompleteTextView
-        android:id="@+id/walletAuto"
+    <TextView
+        android:id="@+id/quickPay_error"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:completionThreshold="1"
-        android:ems="10"
-        android:hint="@string/wallets"
-        android:singleLine="true" >
-
-    </AutoCompleteTextView>
+        android:text=" "
+        android:textAppearance="?android:attr/textAppearanceMedium" />
 
     <AutoCompleteTextView
         android:id="@+id/userAuto"
@@ -101,5 +93,19 @@
         android:layout_toLeftOf="@+id/amountQuickPay"
         android:text="@string/logout" />
 
+    <AutoCompleteTextView
+        android:id="@+id/walletAuto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/quickPay_error"
+        android:completionThreshold="1"
+        android:ems="10"
+        android:gravity="center"
+        android:hint="@string/wallets"
+        android:singleLine="true" >
+
+        <requestFocus />
+    </AutoCompleteTextView>
 
 </RelativeLayout>

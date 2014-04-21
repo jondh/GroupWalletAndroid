@@ -4,50 +4,158 @@
     android:layout_height="match_parent"
     android:paddingBottom="20dp" >
 
-    <TextView
-        android:id="@+id/wallet_name"
+    <TableRow
+        android:id="@+id/tableRow1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="name"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp" >
 
-    <TableRow
-        android:id="@+id/recordRow01"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:gravity="right" >
-
-        <TextView
-            android:id="@+id/wallet_owe"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="0dip"
             android:layout_height="wrap_content"
-            android:gravity="right"
-            android:text="owe"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
+            android:layout_weight="0.7" >
+
+            <ImageView
+                android:id="@+id/record_detailed_owe_pic"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.3"
+                android:src="@drawable/ic_wallet" />
+
+            <com.whereone.groupWallet.customAdapters.AutoResizeTextView
+                android:id="@+id/wallet_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="10dp"
+                android:layout_weight="0.7"
+                android:fontFamily="sans-serif-thin"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:text="walletName " />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
+            android:layout_weight="0.3"
+            android:gravity="right" >
+
+            <com.whereone.groupWallet.customAdapters.AutoResizeTextView
+                android:id="@+id/wallet_total"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="3dp"
+                android:layout_weight="0.6"
+                android:fontFamily="sans-serif-thin"
+                android:gravity="right"
+                android:maxLines="1"
+                android:minLines="1"
+                android:text="$734.52"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:textStyle="normal|italic" />
+
+        </LinearLayout>
 
     </TableRow>
-	
+
     <TableRow
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:gravity="right" >
-
-        <TextView
-            android:id="@+id/wallet_owed"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="right"
-            android:text="owed"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
-
-	</TableRow>
-
-    <TextView
-        android:id="@+id/wallet_total"
+        android:id="@+id/tableRow2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="right"
-        android:text="total"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp" >
+
+        <LinearLayout
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8" >
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:layout_marginLeft="50dp"
+                android:layout_weight="0.41"
+                android:gravity="right"
+                android:orientation="vertical" >
+
+                <TextView
+                    android:id="@+id/record_detailed_owe_username"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-thin"
+                    android:text="@string/money_spent"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/textView4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-thin"
+                    android:text="@string/spent_on_me"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/record_detailed_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-thin"
+                    android:text="@string/amount_in_wallet"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginLeft="5dp"
+            android:layout_weight="0.2"
+            android:gravity="right"
+            android:orientation="vertical" >
+
+            <TextView
+                android:id="@+id/wallet_owed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-thin"
+                android:gravity="right"
+                android:text="$0"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textSize="12sp"
+                android:textStyle="normal|italic" />
+
+            <TextView
+                android:id="@+id/wallet_owe"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-thin"
+                android:text="$0.00"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textSize="12sp"
+                android:textStyle="normal|italic" />
+
+            <TextView
+                android:id="@+id/wallet_total_wallet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-thin"
+                android:text="@string/moneyPlace"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textSize="12sp"
+                android:textStyle="normal|italic" />
+
+        </LinearLayout>
+
+    </TableRow>
 
 </TableLayout>

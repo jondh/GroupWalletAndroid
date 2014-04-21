@@ -1,22 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">GroupWalletCake</string>
+    <string name="app_name">Group Wallet</string>
+    <string name="app_id">315826831884119</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
-    <string name="title_activity_quick_pay">QuickPayActivity</string>
+    <string name="title_activity_quick_pay">Group Wallet</string>
     <string name="loginUser">username or email</string>
     <string name="password">password</string>
     <string name="loginButton">login</string>
     <string name="loginError">Invalid Username/Email or Password</string>
     <string name="logInURL">http://whereone.com/GroupWalletCake/users/loginMobile</string>
+    <string name="newUserURL">http://whereone.com/GroupWalletCake/users/addMobile</string>
+    <string name="loginFacebookURL">http://whereone.com/GroupWalletCake/users/facebookMobile</string>
     <string name="logOutURL">http://whereone.com/GroupWalletCake/users/logoutMobile</string>
     <string name="checkLogInURL">http://whereone.com/GroupWalletCake/users/loginMobileStatus</string>
     <string name="getUserURL">http://whereone.com/GroupWalletCake/Users/getUser</string>
+    <string name="getWRUsersURL">http://whereone.com/GroupWalletCake/Users/getUsersMobile</string>
+    <string name="getUsersURL">http://whereone.com/GroupWalletCake/Users/getPaginateUsers</string>
     <string name="getWalletRelationsURL">http://whereone.com/GroupWalletCake/WalletRelations/getWalletRelations</string>
+    <string name="getPendingWalletRelationsURL">http://whereone.com/GroupWalletCake/WalletRelations/getPendingWalletRelations</string>
     <string name="getWalletsURL">http://whereone.com/GroupWalletCake/WalletRelations/getWallets</string>
     <string name="getRecordsURL">http://whereone.com/GroupWalletCake/Transactions/getTransactions</string>
     <string name="insertRecordURL">http://whereone.com/GroupWalletCake/Transactions/addRemote</string>
+    <string name="insertWalletURL">http://whereone.com/GroupWalletCake/Wallets/addMobile</string>
+    <string name="insertWalletRelationURL">http://whereone.com/GroupWalletCake/WalletRelations/addMobile</string>
+    <string name="acceptDeclineWalletURL">http://whereone.com/GroupWalletCake/WalletRelations/acceptDeclineMobile</string>
     <string name="oweButton">They paid</string>
     <string name="owedButton">I paid</string>
     <string name="amount">amount</string>
@@ -30,6 +39,7 @@
     <string name="title_activity_quick_pay_fragment">QuickPayFragment</string>
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
+
     <string-array name="options_array">
         <item>Profile</item>
         <item>QucikPay</item>
@@ -37,8 +47,26 @@
         <item>Wallets</item>
         <item>Relationships</item>
         <item>Logout</item>
+        <item>Invites</item>
     </string-array>
-        <string name="newWallet">New Wallet</string>
-        <string name="addUserToWallet">Add Person to Wallet</string>
+
+    <string name="newWallet">New Wallet</string>
+    <string name="addUserToWallet">Add Person to Wallet</string>
+    <string name="money_spent">Amount I Have Spent:</string>
+    <string name="spent_on_me">Amount Spent on Me:</string>
+    <string name="amount_in_wallet">Amount Spent in Wallet:</string>
+    <string name="moneyPlace">$2,234.43</string>
+    <string name="title_activity_startup">StartupActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="login_newUser">new user</string>
+    <string name="back">back</string>
+    <string name="username">username</string>
+    <string name="email">email</string>
+    <string name="firstName">first name</string>
+    <string name="lastName">last name</string>
+    <string name="password_confirm">comfirm password</string>
+    <string name="decline">Decline</string>
+    <string name="accept">Accept</string>
 
 </resources>

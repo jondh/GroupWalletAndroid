@@ -55,8 +55,9 @@ import org.json.JSONObject;
 import android.os.AsyncTask;
 
 import com.whereone.groupWallet.controllers.DBhttpRequest;
+import com.whereone.groupWallet.models.Profile;
 
-public class NewUser extends AsyncTask<Void, Void, Integer> {
+public class NewUser extends AsyncTask<String, Void, String> {
 	private DBhttpRequest httpRequest;
 	private NewUserListener listener;
 	private String userName;
@@ -66,7 +67,7 @@ public class NewUser extends AsyncTask<Void, Void, Integer> {
 	private String lastName;
 	private String app;
 	
-	NewUser(DBhttpRequest _httpRequest, String _userName, String _password, String _email,
+	public NewUser(DBhttpRequest _httpRequest, String _userName, String _password, String _email,
 			String _firstName, String _lastName, String _app){
 		httpRequest = _httpRequest;
 		userName = _userName;
@@ -87,10 +88,10 @@ public class NewUser extends AsyncTask<Void, Void, Integer> {
 	}
 	
 	@Override
-	protected Integer doInBackground(Void... arg0) {
-		String url = "http://jondh.com/GroupWallet/android/newUser.php";
+	protected String doInBackground(String... arg0) {
+		String url = arg0[0];
 		ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-		nameValuePairs.add(new BasicNameValuePair("userName",userName));
+		nameValuePairs.add(new BasicNameValuePair("username",userName));
 		nameValuePairs.add(new BasicNameValuePair("password",password));
 		nameValuePairs.add(new BasicNameValuePair("email",email));
 		nameValuePairs.add(new BasicNameValuePair("firstName",firstName));
@@ -98,18 +99,69 @@ public class NewUser extends AsyncTask<Void, Void, Integer> {
 		nameValuePairs.add(new BasicNameValuePair("app",app));
 		String result = httpRequest.sendRequest(nameValuePairs, url);
 		
+		System.out.println(result);
+		
 		try {
 			JSONObject jObj = new JSONObject(result);
-			return jObj.getInt("userID");
+			if(jObj.has("result")){
+				String jResult = jObj.getString("result");
+				if( jResult.contains("success") ){
+					JSONObject userJSON = jObj.getJSONObject("User");
+					JSONObject tokenJSON = jObj.getJSONObject("Token");
+					Profile.getInstance().setProfile(
+							userJSON.getInt("id"),
+							userJSON.getString("username"),
+							"",
+							userJSON.getString("firstName"),
+							userJSON.getString("lastName"),
+							userJSON.getString("email"),
+							userJSON.getString("fbID"),
+							tokenJSON.getString("Private"),
+							tokenJSON.getString("Public")
+					);
+					return "success";
+				}
+				else if( jObj.has("errors") ){
+					String errorReturn = "";
+					JSONObject valErrors = jObj.getJSONObject("errors");
+					if(valErrors.has("email")){
+						String emailResult = valErrors.getString("email");
+						if(emailResult.contains("already in use")){
+							errorReturn += "not unique email";
+						}
+						else{
+							errorReturn += "bad email";
+						}
+					}
+					if(valErrors.has("username")){
+						String usernameResult = valErrors.getString("username");
+						if(usernameResult.contains("already in use")){
+							errorReturn += "not unique username";
+						}
+						else{
+							errorReturn += "bad username";
+						}
+					}
+					return errorReturn;
+				}
+				else if( jResult.contains("timeout") ){
+					return "timeout";
+				}
+				else if( jResult.contains("unknownHost") ){
+					return "unknownHost";
+				}
+			}
+			return "failure";
+			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return -1;
+			return "failure";
 		}
 	}
 
 	@Override
-	protected void onPostExecute(Integer result) {
+	protected void onPostExecute(String result) {
 		listener.newUserComplete(result);
 	}
 
@@ -120,7 +172,7 @@ public class NewUser extends AsyncTask<Void, Void, Integer> {
 	
 	public interface NewUserListener{
 		public void newUserPreExecute();
-		public void newUserComplete(Integer _userID);
+		public void newUserComplete(String _userID);
 		public void newUserCancelled();
 	}
 }

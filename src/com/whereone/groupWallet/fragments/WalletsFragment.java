@@ -4,24 +4,31 @@ import java.util.ArrayList;
 
 import android.app.ListFragment;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 
-import com.whereone.groupWallet.controllers.TransactionsController;
+import com.whereone.groupWallet.R;
+import com.whereone.groupWallet.controllers.WalletRelationsController;
 import com.whereone.groupWallet.controllers.WalletsController;
 import com.whereone.groupWallet.customAdapters.WalletListAdapter;
+import com.whereone.groupWallet.models.Profile;
 import com.whereone.groupWallet.models.Wallet;
-import com.whereone.groupwalletcake.R;
 
 public class WalletsFragment extends ListFragment{
 	
 	private SelfListener selfListener;
-	private WalletFragmentListener walletFragmentListener;
+	private WalletFragmentListener listener;
+	private WalletsController walletsController;
+	private WalletRelationsController walletRelationsController;
+	private Profile profile;
 	private ArrayList<Wallet> wallets;
+	private Boolean loadingFlag;
+	private RelativeLayout loading;
 	
 	public void walletsUpdated(){
 		if(selfListener != null){
@@ -38,16 +45,37 @@ public class WalletsFragment extends ListFragment{
 	}
 	
 	public void setWalletFragmentListener(WalletFragmentListener listener){
-		walletFragmentListener = listener;
+		this.listener = listener;
 	}
 	
 	public interface WalletFragmentListener{
-		public void walletClicked(Integer walletID);
+		public void walletClicked(Wallet wallet);
+		public void addWallet();
+		public void load();
 	}
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.fragment_wallets, null);
+		
+		loading = (RelativeLayout) view.findViewById(R.id.wallets_loading);
+		Button addWallet = (Button) view.findViewById(R.id.wallets_new);
+		
+		if(loadingFlag){
+			loading.setVisibility(View.VISIBLE);
+		}
+		else{
+			loading.setVisibility(View.GONE);
+		}
+		
+		addWallet.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				listener.addWallet();
+			}
+		});
+		
         return view;
 	}
 	
@@ -56,37 +84,59 @@ public class WalletsFragment extends ListFragment{
 		super.onCreate(savedInstanceState);
 		
 		final Context context = getActivity();
+		profile = Profile.getInstance();
+		walletsController = WalletsController.getInstance();
+		walletRelationsController = WalletRelationsController.getInstance();
 		
-		final SharedPreferences profile = context.getSharedPreferences("com.whereone.groupWallet.profile", Context.MODE_PRIVATE);
+		loadingFlag = true;
 		
-		final WalletsController walletTable = new WalletsController(context);
-		final TransactionsController recordTable = new TransactionsController(context, null);
+		listener.load();
 		
-		wallets = walletTable.getWallets();
-		if(wallets != null){
-			WalletListAdapter wadapter = new WalletListAdapter(context, R.layout.wallet_row, wallets, recordTable, profile.getInt("id", 0));
-			setListAdapter(wadapter);
-		}
-		
+		setList(context);
+
 		this.setSelfListener(new SelfListener(){
 
 			@Override
 			public void walletsUpdated() {
-				wallets = walletTable.getWallets();
-				if(wallets != null){
-					WalletListAdapter wadapter = new WalletListAdapter(context, R.layout.wallet_row, wallets, recordTable, profile.getInt("id", 0));
-					setListAdapter(wadapter);
-				}
+				
+				getActivity().runOnUiThread(new Runnable(){
+
+					@Override
+					public void run() {
+						if(loading != null && loadingFlag){
+							loadingFlag = false;
+							loading.setVisibility(View.GONE);
+						}
+					}
+					
+				});
+				
+				setList(context);
 			}
 			
 		});
-		
+	}
+	
+	public void setList(Context context){
+		wallets = walletsController.getWalletsUserID(profile.getUserID(), walletRelationsController, 1);
+		if(wallets != null){
+			WalletListAdapter wadapter = new WalletListAdapter(context, R.layout.wallet_row, wallets, profile.getUserID());
+			setListAdapter(wadapter);
+		}
 	}
 	
 	@Override  
 	public void onListItemClick(ListView l, View v, int position, long id) { 
-		walletFragmentListener.walletClicked( wallets.get(position).getID() );
+		listener.walletClicked( wallets.get(position) );
 	}  
 	
-	
+	@Override
+	public void onPause(){
+		super.onPause();
+		this.setSelfListener(null);
+		loadingFlag = false;
+		if( loading != null ){
+			loading.setVisibility(View.GONE);
+		}
+	}
 }

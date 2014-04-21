@@ -6,7 +6,7 @@
     android:paddingRight="0dp" >
 
     <ImageView
-        android:id="@+id/imageView1"
+        android:id="@+id/profile_pic"
         android:layout_width="150dp"
         android:layout_height="150dp"
         android:layout_alignParentLeft="true"
@@ -19,7 +19,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
-        android:layout_toRightOf="@+id/imageView1"
+        android:layout_toRightOf="@+id/profile_pic"
         android:text="username"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 

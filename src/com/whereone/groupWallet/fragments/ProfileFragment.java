@@ -1,11 +1,13 @@
 package com.whereone.groupWallet.fragments;
 
-import java.util.ArrayList;
+import java.text.NumberFormat;
+import java.util.concurrent.RejectedExecutionException;
 
 import android.app.Fragment;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
@@ -13,23 +15,26 @@ import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewGroup.LayoutParams;
-import android.widget.ArrayAdapter;
-import android.widget.LinearLayout;
-import android.widget.ListView;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.whereone.CustomHorizontalScrollView;
-import com.whereone.groupWallet.controllers.WalletsController;
-import com.whereone.groupwalletcake.R;
+import com.whereone.GetGravitarImage;
+import com.whereone.GetGravitarImage.GravitarImageListener;
+import com.whereone.groupWallet.R;
+import com.whereone.groupWallet.controllers.TransactionsController;
+import com.whereone.groupWallet.controllers.WalletRelationsController;
+import com.whereone.groupWallet.customAdapters.AutoResizeTextView;
+import com.whereone.groupWallet.models.Profile;
+import com.whereone.groupWallet.models.User;
 
 public class ProfileFragment extends Fragment{
 	
-	ArrayList<String> wallets = new ArrayList<String>();
-	private LinearLayout linearLayout;
-	private CustomHorizontalScrollView horizontalScrollView;
-	private ListView friendView;
-	private ListView walletView;
+	private ProfileListener listener;
+	private ImageView profilePic;
+	private User user;
+	Integer dpHeight;
+	Integer dpWidth;
 	Integer height;
 	Integer width;
 
@@ -39,45 +44,105 @@ public class ProfileFragment extends Fragment{
 	    display.getMetrics(outMetrics);
 
 	    float density  = getResources().getDisplayMetrics().density;
-	    Integer dpHeight = (int) (outMetrics.heightPixels / density);
-	    Integer dpWidth  = (int) (outMetrics.widthPixels / density);
+	    dpHeight =  (int) (outMetrics.heightPixels / density);
+	    dpWidth  = (int) (outMetrics.widthPixels / density);
 	    Resources r = getResources();
-	    height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpHeight-25, r.getDisplayMetrics());
-		width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpWidth-25, r.getDisplayMetrics());
-		  
-		
+	    height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, (float) (dpHeight-25), r.getDisplayMetrics());
+		width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, (float) (dpWidth-25), r.getDisplayMetrics());
+		System.out.println(dpHeight + " " + dpWidth + " " + height + " " + width);
+	}
+	
+	public void setUser(User user){
+		this.user = user;
 	}
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.fragment_profile, null);
 		
-		//initScreenInfo();
-		//setHorizontalScroll(view);
 		
-		final SharedPreferences profile = getActivity().getSharedPreferences("com.whereone.groupWallet.profile", Context.MODE_PRIVATE);
+		initScreenInfo();
 		
-		WalletsController walletTable = new WalletsController(getActivity());
+		final TransactionsController transactionsController = TransactionsController.getInstance();
+		WalletRelationsController walletRelationsController = WalletRelationsController.getInstance();
+		
+		Profile profile = Profile.getInstance();
+		
+		if(user == null){
+			user = Profile.getInstance();
+		}
 		
 		TextView username = (TextView) view.findViewById(R.id.profile_username);
 		TextView name = (TextView) view.findViewById(R.id.profile_name);
-		walletView = (ListView) view.findViewById(R.id.profile_wallets);
-		friendView = (ListView) view.findViewById(R.id.profile_friends);
+		profilePic = (ImageView) view.findViewById(R.id.profile_pic);
+		AutoResizeTextView totalMoney = (AutoResizeTextView) view.findViewById(R.id.profile_totalMoney);
+		Button walletNum = (Button) view.findViewById(R.id.profile_walletNum);
 		
-		username.setText("@"+profile.getString("username", ""));
-		name.setText(profile.getString("firstName", "") + " " + profile.getString("lastName", ""));
+		String email = user.getEmail();
+		GetGravitarImage getGravitarImage = new GetGravitarImage(email);
+		getGravitarImage.setGravitarImageListener(new GravitarImageListener(){
+
+			@Override
+			public void getImageComplete(Drawable result) {
+				profilePic.setImageDrawable(result);
+			}
+			
+		});
+		if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.HONEYCOMB) {
+			try{
+				getGravitarImage.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, width/2);
+			}
+			catch(RejectedExecutionException e){
+				getGravitarImage.execute(width/2);
+			}
+	   	}
+	   	else {
+	   		getGravitarImage.execute(width/2);
+	   	}
 		
-		ArrayList<String> friend = new ArrayList<String>();
-		friend.add("klsdfjklsdjf");friend.add("klsdfjklsdjf");friend.add("klsdfjklsdjf");friend.add("klsdfjklsdjf");friend.add("klsdfjklsdjf");friend.add("klsdfjklsdjf");friend.add("klsdfjklsdjf");friend.add("klsdfjklsdjf");friend.add("klsdfjklsdjf");
-		ArrayAdapter<String> adapterFriends = new ArrayAdapter<String>(getActivity(), R.layout.list_item, friend);
-	   	friendView.setAdapter(adapterFriends);
+		username.setText("@"+user.getUserName());
+		name.setText(user.getFirstName() + " " + user.getLastName());
 		
-		wallets = walletTable.getWalletNames();
-		if(wallets != null){
-			wallets.addAll(walletTable.getWalletNames());
-			ArrayAdapter<String> adapterWallets = new ArrayAdapter<String>(getActivity(), R.layout.list_item, wallets);
-		   	walletView.setAdapter(adapterWallets);
+		if(profile.getUserID() == user.getUserID()){
+			
+			Double totalOwe = transactionsController.getTotalOwe(user.getUserID());
+			Double totalOwed = transactionsController.getTotalOwed(user.getUserID());
+			String formatted = NumberFormat.getCurrencyInstance().format((totalOwed-totalOwe));
+			if((totalOwed < totalOwe)){
+				totalMoney.setTextColor(getActivity().getResources().getColor(R.color.red));
+			}
+			totalMoney.setText(formatted);
+			
+			Integer numWallets = walletRelationsController.getWalletsForUser(user.getUserID(), 1).size();
+			walletNum.setText("You are in "+numWallets+" wallets");
+			
 		}
+		else{
+			Double totalOwe = transactionsController.getOweUser(profile.getUserID(), user.getUserID());
+			Double totalOwed = transactionsController.getOweUser(user.getUserID(), profile.getUserID());
+			String formatted = NumberFormat.getCurrencyInstance().format((totalOwed-totalOwe));
+			if((totalOwed < totalOwe)){
+				totalMoney.setTextColor(getActivity().getResources().getColor(R.color.red));
+			}
+			totalMoney.setText(formatted);
+			
+			Integer sharedWallets = walletRelationsController.getWalletsForUser(user.getUserID(), 1).size();
+			if(sharedWallets == 1){
+				walletNum.setText("You share " + sharedWallets + " wallet");
+			}
+			else{
+				walletNum.setText("You share " + sharedWallets + " wallets");
+			}
+		}
+		
+		walletNum.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				listener.walletsClicked();
+			}
+			
+		});
 		
         return view;
 	}
@@ -87,53 +152,12 @@ public class ProfileFragment extends Fragment{
 		super.onCreate(savedInstanceState);
 	}
 	
-	public void setHorizontalScroll(View view){
-		horizontalScrollView = new CustomHorizontalScrollView(getActivity());
-		// get parent container linearLayout
-		linearLayout = (LinearLayout) view.findViewById(R.id.layer);
-		linearLayout.addView(horizontalScrollView);
-		// create a horizontal linearLayout to contain each page
-		LinearLayout scrollContainer = new LinearLayout(getActivity());
-		scrollContainer.setLayoutParams(new LayoutParams(width, -1));
-		// create and add first page
-		walletView = new ListView(getActivity());
-		walletView.setLayoutParams(new LayoutParams(width, height));
-		//scrollContainer.addView(walletView);
-		/*
-		walletView.setOnTouchListener(new ListView.OnTouchListener() {
-	        @Override
-	        public boolean onTouch(View v, MotionEvent event) {
-	        	System.out.println("listTouched");
-	        	
-	            int action = event.getAction();
-	            switch (action) {
-	            case MotionEvent.ACTION_DOWN:
-	                // Disallow ScrollView to intercept touch events.
-	                v.getParent().requestDisallowInterceptTouchEvent(true);
-	                break;
-
-	            case MotionEvent.ACTION_UP:
-	                // Allow ScrollView to intercept touch events.
-	                v.getParent().requestDisallowInterceptTouchEvent(true);
-	                break;
-	            case MotionEvent.ACTION_SCROLL:
-	            	v.getParent().requestDisallowInterceptTouchEvent(true);
-	            	break;
-	            }
-	           
-
-	            // Handle ListView touch events.
-	            v.onGenericMotionEvent(event);
-	            v.onTouchEvent(event);
-	            return true;
-	        }
-	    });
-	    */
-		// create and add second page
-		friendView = new ListView(getActivity());
-		friendView.setLayoutParams(new LayoutParams(width, height));
-		//scrollContainer.addView(friendView);
-		
-		horizontalScrollView.addView(walletView);
+	public void setProfileListener(ProfileListener listener){
+		this.listener = listener;
 	}
+	
+	public interface ProfileListener{
+		public void walletsClicked();
+	}
+	
 }

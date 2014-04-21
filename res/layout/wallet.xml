@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_margin="10dp"
+        android:background="@drawable/rectangle_border" >
+
+        <LinearLayout
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.7" >
+
+            <ImageView
+                android:id="@+id/record_detailed_owe_pic"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.3"
+                android:src="@drawable/ic_wallet" />
+
+            <com.whereone.groupWallet.customAdapters.AutoResizeTextView
+                android:id="@+id/wallett_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="10dp"
+                android:layout_weight="0.7"
+                android:fontFamily="sans-serif-thin"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:text="walletName " />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
+            android:layout_marginRight="5dp"
+            android:layout_weight="0.3"
+            android:gravity="right" >
+
+            <com.whereone.groupWallet.customAdapters.AutoResizeTextView
+                android:id="@+id/wallett_total"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="3dp"
+                android:layout_weight="0.6"
+                android:fontFamily="sans-serif-thin"
+                android:gravity="right"
+                android:maxLines="1"
+                android:minLines="1"
+                android:text="$734.52"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:textStyle="normal|italic" />
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

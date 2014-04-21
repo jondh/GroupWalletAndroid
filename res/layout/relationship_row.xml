@@ -8,28 +8,85 @@
     <TableRow
         android:id="@+id/recordRow01"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:gravity="center" >
 
-        <TextView
-            android:id="@+id/relationship_name"
-            android:layout_width="wrap_content"
+        <ImageView
+            android:id="@+id/relation_pic"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="name"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
+            android:layout_weight="0.15"
+            android:src="@drawable/ic_user" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dp"
+            android:layout_weight="0.55"
+            android:orientation="vertical" >
+
+            <com.whereone.groupWallet.customAdapters.AutoResizeTextView
+                android:id="@+id/relationship_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-thin"
+                android:text="userName"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textSize="22sp" />
+
+            <com.whereone.groupWallet.customAdapters.AutoResizeTextView
+                android:id="@+id/relationship_fullName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-thin"
+                android:text="firstName lastName" />
+
+        </LinearLayout>
+
+        <com.whereone.groupWallet.customAdapters.AutoResizeTextView
+            android:id="@+id/relationship_total"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.3"
+            android:fontFamily="sans-serif-thin"
+            android:gravity="right"
+            android:text="total"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textSize="20sp"
+            android:textStyle="normal|italic" />
+
     </TableRow>
 	
     <TableRow
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
         android:gravity="right" >
 
         <TextView
-            android:id="@+id/relationship_owe"
-            android:layout_width="wrap_content"
+            android:id="@+id/quickPay_error"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="0.7"
+            android:fontFamily="sans-serif-thin"
+            android:gravity="right"
+            android:text="They Spent:"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textSize="14sp" />
+
+        <com.whereone.groupWallet.customAdapters.AutoResizeTextView
+            android:id="@+id/relationship_owe"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.3"
+            android:fontFamily="sans-serif-thin"
             android:gravity="right"
             android:text="owe"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textStyle="normal|italic" />
 
 	</TableRow>
 
@@ -37,15 +94,31 @@
         android:id="@+id/tableRow1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
         android:gravity="right" >
 
         <TextView
-            android:id="@+id/relationship_owed"
-            android:layout_width="wrap_content"
+            android:id="@+id/textView2"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="0.7"
+            android:fontFamily="sans-serif-thin"
+            android:gravity="right"
+            android:text="You Spent:"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textSize="14sp" />
+
+        <com.whereone.groupWallet.customAdapters.AutoResizeTextView
+            android:id="@+id/relationship_owed"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.3"
+            android:fontFamily="sans-serif-thin"
             android:gravity="right"
             android:text="owed"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textStyle="normal|italic" />
 
     </TableRow>
 
@@ -54,14 +127,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="right" >
-
-        <TextView
-            android:id="@+id/relationship_total"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="right"
-            android:text="total"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
 
     </TableRow>
 

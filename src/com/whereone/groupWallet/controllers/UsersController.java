@@ -1,6 +1,7 @@
 package com.whereone.groupWallet.controllers;
 
 import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -12,14 +13,23 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
 
+import com.whereone.groupWallet.GetUser;
+import com.whereone.groupWallet.GetUser.getUserListener;
+import com.whereone.groupWallet.GetWRUsers;
+import com.whereone.groupWallet.GetWRUsers.UserWRListener;
+import com.whereone.groupWallet.R;
+import com.whereone.groupWallet.models.Profile;
 import com.whereone.groupWallet.models.User;
-import com.whereone.groupwalletcake.GetUser;
-import com.whereone.groupwalletcake.GetUser.getUserListener;
-import com.whereone.groupwalletcake.R;
+import com.whereone.groupWallet.models.WalletRelation;
 
 public class UsersController extends SQLiteOpenHelper {
-
-	private usersControllerListener listener;
+	private static UsersController instance;
+	
+	private final Semaphore insertAccess = new Semaphore(1, true);
+	private final Semaphore checkAccess = new Semaphore(1, true);
+	
+	private UsersGetListener getListener;
+	private UsersGetWRListener getWRListener;
 	
 	public static final String TABLE_USERS = "users";
 	public static final String COLUMN_ID = "id";
@@ -27,6 +37,7 @@ public class UsersController extends SQLiteOpenHelper {
 	public static final String COLUMN_FIRSTNAME = "firstname";
 	public static final String COLUMN_LASTNAME = "lastname";
 	public static final String COLUMN_EMAIL = "email";
+	public static final String COLUMN_FBID = "fbID";
 	
 	private Context context;
 
@@ -40,12 +51,23 @@ public class UsersController extends SQLiteOpenHelper {
 	      + " text not null," + COLUMN_FIRSTNAME
 	      + " text not null," + COLUMN_LASTNAME
 	      + " text not null," + COLUMN_EMAIL
-	      + " text not null);";
+	      + " text not null," + COLUMN_FBID 
+	      + " text);";
 
-	public UsersController(Context _context) {
+	private UsersController(Context _context) {
 		super(_context, DATABASE_NAME, null, DATABASE_VERSION);
 		
-		context = _context;
+	}
+	
+	public static void init(Context _context){
+		if(instance == null){
+			instance = new UsersController(_context);
+			instance.context = _context;
+		}
+	}
+	
+	public static UsersController getInstance(){
+		return instance;
 	}
 
 	@Override
@@ -62,41 +84,31 @@ public class UsersController extends SQLiteOpenHelper {
 		onCreate(database);
 	}
 	
-	public void setUsersControllerListener(usersControllerListener _listener) {
-        this.listener = _listener;
+	public void setUsersGetListener(UsersGetListener _listener) {
+        instance.getListener = _listener;
     }
 	
-	public interface usersControllerListener{
-		public void insertUserAsyncComplete(Integer userID);
-		// 1 == Add Success
+	public interface UsersGetListener{
+		// > 0 == Success => user id
 		// 0 == Empty Result
 		// -1 == Null Result -> due to bad access token(s)
+		// -2 == timeout
+		// -3 == unknown host
+		// -4 == cancelled
 		public void getUserComplete(Integer result);
+	}
+	
+	public void setUsersGetWRListener(UsersGetWRListener listener){
+		instance.getWRListener = listener;
+	}
+	
+	public interface UsersGetWRListener{
+		public void getWRUsersComplete(Integer result, ArrayList<Integer> resultUsers);
 	}
 	
 	public void removeAll(){
 		SQLiteDatabase databaseW = this.getWritableDatabase();
 		databaseW.delete(TABLE_USERS, null, null);
-		databaseW.close();
-	}
-	
-	public void insertUsers(ArrayList<User> users){
-		SQLiteDatabase databaseW = this.getWritableDatabase();
-		for(Integer i = 0; i < users.size(); i++){
-			User curUser = users.get(i);
-			ContentValues values = new ContentValues();
-			values.put("id", curUser.getUserID());
-			values.put("username", curUser.getUserName());
-			values.put("firstname", curUser.getFirstName());
-			values.put("lastname", curUser.getLastName());
-			values.put("email", curUser.getEmail());
-			try{
-				databaseW.insertOrThrow(TABLE_USERS, null, values);
-			}
-			catch (SQLiteConstraintException e){
-				Log.i("Wallet Constraint Exception", curUser.getUserID() + " duplicate");
-			}
-		}
 		databaseW.close();
 	}
 	
@@ -160,7 +172,7 @@ public class UsersController extends SQLiteOpenHelper {
         }
 	}
 	
-	public String getUserFromId(Integer userID){
+	public String getUserNameFromId(Integer userID){
 		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
 				COLUMN_USERNAME
@@ -245,7 +257,7 @@ public class UsersController extends SQLiteOpenHelper {
 	                		 cursor.getString(cursor.getColumnIndex(COLUMN_FIRSTNAME)),
 	                		 cursor.getString(cursor.getColumnIndex(COLUMN_LASTNAME)),
 	                		 cursor.getString(cursor.getColumnIndex(COLUMN_EMAIL)),
-	                		 0
+	                		 null
 	                	));
 	             }
 	        }
@@ -254,7 +266,50 @@ public class UsersController extends SQLiteOpenHelper {
 		return users;
 	}
 	
+	public User getUserFromId(Integer userID){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+
+		String[] columns = {
+				COLUMN_ID,
+				COLUMN_USERNAME,
+				COLUMN_FIRSTNAME,
+				COLUMN_LASTNAME,
+				COLUMN_EMAIL
+		};
+		
+		String whereClause = "id = ?";
+		String[] whereArgs = new String[]{
+				userID.toString()
+		};
+		
+		Cursor cursor = databaseR.query(TABLE_USERS, columns, whereClause, whereArgs, null, null, null);
+		
+		if(cursor.getCount() >0)
+        {
+            cursor.moveToNext();
+            databaseR.close();
+            return ( new User(
+        		 cursor.getInt(cursor.getColumnIndex(COLUMN_ID)),
+        		 cursor.getString(cursor.getColumnIndex(COLUMN_USERNAME)),
+        		 cursor.getString(cursor.getColumnIndex(COLUMN_FIRSTNAME)),
+        		 cursor.getString(cursor.getColumnIndex(COLUMN_LASTNAME)),
+        		 cursor.getString(cursor.getColumnIndex(COLUMN_EMAIL)),
+        		 null
+        	));
+             
+        }
+		
+		databaseR.close();
+		return null;
+	}
+	
 	public void insertUser(User user){
+		try {
+			insertAccess.acquire();
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		SQLiteDatabase databaseW = this.getWritableDatabase();
 		ContentValues values = new ContentValues();
 		values.put("id", user.getUserID());
@@ -270,6 +325,27 @@ public class UsersController extends SQLiteOpenHelper {
 		}
 		catch (NullPointerException e){
 			Log.i("UserCont insertUser", "NullPointerException " + user.getUserID() + " " + user.getName());
+		}
+		databaseW.close();
+		insertAccess.release();
+	}
+	
+	public void insertUsers(ArrayList<User> users){
+		SQLiteDatabase databaseW = this.getWritableDatabase();
+		for(Integer i = 0; i < users.size(); i++){
+			User curUser = users.get(i);
+			ContentValues values = new ContentValues();
+			values.put("id", curUser.getUserID());
+			values.put("username", curUser.getUserName());
+			values.put("firstname", curUser.getFirstName());
+			values.put("lastname", curUser.getLastName());
+			values.put("email", curUser.getEmail());
+			try{
+				databaseW.insertOrThrow(TABLE_USERS, null, values);
+			}
+			catch (SQLiteConstraintException e){
+				Log.i("Wallet Constraint Exception", curUser.getUserID() + " duplicate");
+			}
 		}
 		databaseW.close();
 	}
@@ -301,25 +377,126 @@ public class UsersController extends SQLiteOpenHelper {
 	}
 	
 	public Boolean containsId(Integer id){
+		try {
+			checkAccess.acquire();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
 				COLUMN_ID
 		};
 		
-		Cursor cursor = databaseR.query(TABLE_USERS, columns, null, null, null, null, null);
+		String whereClause = "id = ?";
+		String[] whereArgs = new String[]{
+				id.toString()
+		};
+		
+		Cursor cursor = databaseR.query(TABLE_USERS, columns, whereClause, whereArgs, null, null, null);
 		
 		if(cursor.getCount() > 0){
 			databaseR.close();
+			checkAccess.release();
 			return true;
 		}
 		else{
 			databaseR.close();
+			checkAccess.release();
 			return false;
 		}
 	}
+
+	private Integer numNewUsers;
+	public void findUsersForWRs(DBhttpRequest httpRequest, Profile profile, ArrayList<WalletRelation> walletR){
+		
+		final ArrayList<Integer> users = new ArrayList<Integer>();
+		
+		if(numNewUsers == null){
+			numNewUsers = 0;
+		}
+		
+		for(int i = 0; i < walletR.size(); i++){
+			if( !instance.containsId( walletR.get(i).getUserID() ) && !users.contains(walletR.get(i).getUserID()) ){
+				users.add( walletR.get(i).getUserID() );
+				numNewUsers++;
+			}
+		}
+		
+		if(users.size() == 0){
+			instance.getWRListener.getWRUsersComplete(0, null);
+		}
+		else{
+			getUsersAndInsert(httpRequest, profile, users);
+		}
+	}
 	
-	public void getUserAndInsert(Integer id, final DBhttpRequest httpRequest, final String public_token, final String private_tokenH, final String _timeStamp){
-		GetUser getUser = new GetUser(httpRequest, id, public_token, private_tokenH, _timeStamp);
+	public void getUsersAndInsert(DBhttpRequest httpRequest, Profile profile, ArrayList<Integer> uids){
+		GetWRUsers getWRUsers = new GetWRUsers(httpRequest, profile, uids);
+	   	getWRUsers.setWRUsersListener(new UserWRListener(){
+
+			@Override
+			public void getUsersPreExecute() {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void getUsersCompleted(final ArrayList<User> users, String resultString) {
+				Integer result;
+				if(users != null){
+					
+					new Thread(){
+						
+						@Override
+						public void run(){
+							instance.insertUsers(users);
+							ArrayList<Integer> returnUsers = new ArrayList<Integer>();
+							for(int i = 0; i < users.size(); i++){
+								returnUsers.add( users.get(i).getUserID() );
+							}
+							instance.getWRListener.getWRUsersComplete(1, returnUsers);
+						}
+						
+					}.start();
+					
+				}
+				else{
+					if(resultString.contains("timeout")){
+						result = -2;
+					}
+					else if(resultString.contains("unknownHost")){
+						result = -3;
+					}
+					else if(resultString.contains("empty")){
+						result = 0;
+					}
+					else{
+						result = -1;
+					}
+					
+					instance.getWRListener.getWRUsersComplete(result, null);
+				}
+				
+			}
+
+			@Override
+			public void getUsersCancelled() {
+				instance.getListener.getUserComplete(-4);
+				Log.i("UsersController", "getUsersCanelled" );
+			}
+	   		
+	   	});
+	   	if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.HONEYCOMB) {
+	   		getWRUsers.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, instance.context.getString(R.string.getWRUsersURL));
+	   	}
+	   	else {
+	   		getWRUsers.execute(instance.context.getString(R.string.getWRUsersURL));
+	   	}
+	}
+	
+	public void getUserAndInsert(DBhttpRequest httpRequest, Profile profile, Integer id){
+		GetUser getUser = new GetUser(httpRequest, profile, id);
 	   	getUser.setUserListener(new getUserListener(){
 
 			@Override
@@ -329,56 +506,44 @@ public class UsersController extends SQLiteOpenHelper {
 			}
 
 			@Override
-			public void getUserCompleted(User user) {
-				if(user != null){
-				Log.i("User Result", user.getUserName());}
+			public void getUserCompleted(User user, String resultString) {
 				Integer result;
 				if(user != null){
-					if(user.getUserID() == -1 && user.getUserName() == "-1" && user.getFirstName() == "-1"){
-						Log.i("UsersController", "Empty Result");
+					instance.insertUser(user);
+					instance.getListener.getUserComplete(user.getUserID());
+				}
+				else{
+					if(resultString.contains("timeout")){
+						result = -2;
+					}
+					else if(resultString.contains("unknownHost")){
+						result = -3;
+					}
+					else if(resultString.contains("empty")){
 						result = 0;
 					}
 					else{
-						insertUserAsync(user);
-						result = 1;
+						result = -1;
 					}
+					Log.i("UsersController", "result is null : " + resultString);
+					instance.getListener.getUserComplete(result);
 				}
-				else{
-					Log.i("UsersController", "result is null -> possibly should log out");
-					result = -1;
-					//logOut.logOut(context, httpRequest, context.getString(R.string.logOutURL), public_token, private_tokenH, _timeStamp);
-				}
-				listener.getUserComplete(result);
+				
 			}
 
 			@Override
 			public void getUserCancelled() {
-				// TODO Auto-generated method stub
-				
+				instance.getListener.getUserComplete(-4);
+				Log.i("UsersController", "getUserCanelled" );
 			}
 	   		
 	   	});
 	   	if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.HONEYCOMB) {
-	   		getUser.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, context.getString(R.string.getUserURL));
+	   		getUser.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, instance.context.getString(R.string.getUserURL));
 	   	}
 	   	else {
-	   		getUser.execute(context.getString(R.string.getUserURL));
+	   		getUser.execute(instance.context.getString(R.string.getUserURL));
 	   	}
 	}
-	
-	protected void insertUserAsync(final User user){
-		final UsersController userTable = this;
-		class putUser implements Runnable{
-			@Override
-			public void run(){
-				userTable.insertUser(user);
-				listener.insertUserAsyncComplete(user.getUserID());
-			}
-		}
-		
-		Thread insertUser = new Thread(new putUser());
-		insertUser.start();
-	}
-	
 	
 }

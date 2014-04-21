@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/add_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true" >
+
+   
+    <LinearLayout
+        android:id="@+id/add_userView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="invisible" >
+
+        <EditText
+            android:id="@+id/add_userFilter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:hint="name, username, or email"
+            android:inputType="textNoSuggestions" >
+
+            <requestFocus />
+        </EditText>
+
+        <ListView
+            android:id="@+id/add_userList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" >
+        </ListView>
+
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/add_walletViewScroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true" >
+
+         <LinearLayout
+        android:id="@+id/add_walletView"
+        android:layout_width="match_parent"
+        android:layout_height="460dp"
+        android:orientation="vertical"
+        android:visibility="visible" >
+
+        <EditText
+            android:id="@+id/add_walletSearch"
+            android:layout_width="match_parent"
+            android:layout_height="0dip"
+            android:layout_weight="0.1"
+            android:ems="10"
+            android:hint="wallet name"
+            android:textSize="20sp" />
+
+        <Button
+            android:id="@+id/add_walletInvite"
+            android:layout_width="match_parent"
+            android:layout_height="0dip"
+            android:layout_margin="10dp"
+            android:layout_weight="0.1"
+            android:text="Invite User" />
+
+        <ListView
+            android:id="@+id/add_walletInviteList"
+            android:layout_width="match_parent"
+            android:layout_height="0dip"
+            android:layout_weight="0.7" >
+        </ListView>
+
+        <Button
+            android:id="@+id/add_submit"
+            android:layout_width="match_parent"
+            android:layout_height="0dip"
+            android:layout_gravity="right"
+            android:layout_margin="10dp"
+            android:layout_weight="0.1"
+            android:text="@string/submit" />
+
+    </LinearLayout>
+
+    </ScrollView>
+
+</RelativeLayout>

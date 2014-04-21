@@ -11,11 +11,12 @@ import android.graphics.Bitmap;
 
 public class User {
 	protected Integer userID;
-	protected Integer fbID;
+	protected String fbID;
 	protected String email;
 	protected String userName;
 	protected String firstName;
 	protected String lastName;
+	protected String dateTime;
 	private String picURL;
 	private Bitmap picture;
 	private Double walletAmount;
@@ -25,12 +26,13 @@ public class User {
 	
 	public User(){
 		userID = 0;
-		fbID = 0;
+		fbID = "";
 		email = "";
 		userName = "";
 		firstName = "";
 		lastName = "";
 		picURL = "";
+		dateTime = "";
 		picture = null;
 		walletAmount = 0.0;
 		totalAmount = 0.0;
@@ -38,7 +40,7 @@ public class User {
 		totalAmountRefresh = true;
 	}
 	
-	public User(Integer _userID, String _userName, String _firstName, String _lastName, String _email, Integer _fbID){
+	public User(Integer _userID, String _userName, String _firstName, String _lastName, String _email, String _fbID){
 		userID = _userID;
 		fbID = _fbID;
 		email = _email;
@@ -48,12 +50,29 @@ public class User {
 		walletAmount = 0.0;
 		totalAmount = 0.0;
 		picURL = "";
+		dateTime = "";
 		picture = null;
 		walletAmountRefresh = true;
 		totalAmountRefresh = true;
 	}
 	
-	public User(Integer _userID, String _userName, String _firstName, String _lastName, String _email, Integer _fbID, Double _walletAmount, Double _totalAmount){
+	public User(Integer _userID, String _userName, String _firstName, String _lastName, String _email, String _fbID, String _dateTime){
+		userID = _userID;
+		fbID = _fbID;
+		email = _email;
+		userName = _userName;
+		firstName = _firstName;
+		lastName = _lastName;
+		walletAmount = 0.0;
+		totalAmount = 0.0;
+		picURL = "";
+		dateTime = _dateTime;
+		picture = null;
+		walletAmountRefresh = true;
+		totalAmountRefresh = true;
+	}
+	
+	public User(Integer _userID, String _userName, String _firstName, String _lastName, String _email, String _fbID, Double _walletAmount, Double _totalAmount){
 		userID = _userID;
 		fbID = _fbID;
 		email = _email;
@@ -63,6 +82,7 @@ public class User {
 		walletAmount = _walletAmount;
 		totalAmount = _totalAmount;
 		picURL = "";
+		dateTime = "";
 		picture = null;
 		walletAmountRefresh = true;
 		totalAmountRefresh = true;
@@ -71,7 +91,7 @@ public class User {
 	public void setUserID(Integer _userID){
 		userID = _userID;
 	}
-	public void setFB(Integer _fbID){
+	public void setFB(String _fbID){
 		fbID = _fbID;
 	}
 	public void setUserName(String _userName){
@@ -108,7 +128,7 @@ public class User {
 	public Integer getUserID(){
 		return userID;
 	}
-	public Integer getFbID(){
+	public String getFbID(){
 		return fbID;
 	}
 	public String getUserName(){
@@ -146,7 +166,7 @@ public class User {
 	}
 	
 	public void findPicURL(){
-		if(fbID > 0){
+		if(fbID != null){
 			picURL = "http://graph.facebook.com/"+fbID+"/picture?type=normal";
 		}
 		else{

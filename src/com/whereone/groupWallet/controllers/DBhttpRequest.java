@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import org.apache.http.HttpEntity;
@@ -26,10 +28,21 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 
 public class DBhttpRequest {
+	private static DBhttpRequest instance;
 	private DefaultHttpClient httpClient;
-	private static final int SOCKET_OPERATION_TIMEOUT = 10 * 1000;
+	private static final int SOCKET_OPERATION_TIMEOUT = 20 * 1000;
 	
-	public DBhttpRequest(){
+	public static void init(){
+		if(instance == null){
+			instance = new DBhttpRequest();
+		}
+	}
+	
+	public static DBhttpRequest getInstance(){
+		return instance;
+	}
+	
+	private DBhttpRequest(){
 		HttpParams params = new BasicHttpParams();
 
         HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
@@ -66,11 +79,17 @@ public class DBhttpRequest {
 	        is.close(); 
 	        String result = sb.toString();
 	        return result;
-		}catch (IOException e) {
+		} catch (SocketTimeoutException e){ 
+		
+			return "{'result':'timeout'}";
+		} catch (UnknownHostException e){ // IF NO Internet connection
+			
+			return "{'result':'unknownHost'}";
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return "";
-		}
+		} 
 	}
 	
 	public void safeClose()

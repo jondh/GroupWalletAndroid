@@ -1,55 +1,61 @@
 package com.whereone.groupWallet.activities;
 
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
+import java.util.Calendar;
 
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
+import android.util.LruCache;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 
+import com.whereone.groupWallet.GetData;
+import com.whereone.groupWallet.GetData.getDataListener;
+import com.whereone.groupWallet.LogOutCurrent;
+import com.whereone.groupWallet.R;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
 import com.whereone.groupWallet.controllers.TransactionsController;
 import com.whereone.groupWallet.controllers.UsersController;
 import com.whereone.groupWallet.controllers.WalletRelationsController;
 import com.whereone.groupWallet.controllers.WalletsController;
+import com.whereone.groupWallet.fragments.AddFragment;
+import com.whereone.groupWallet.fragments.AddFragment.AddListener;
 import com.whereone.groupWallet.fragments.ProfileFragment;
+import com.whereone.groupWallet.fragments.ProfileFragment.ProfileListener;
 import com.whereone.groupWallet.fragments.QuickPayFragment;
+import com.whereone.groupWallet.fragments.QuickPayFragment.QuickPayListener;
+import com.whereone.groupWallet.fragments.RecordDetailedFragment;
 import com.whereone.groupWallet.fragments.RecordsFragment;
+import com.whereone.groupWallet.fragments.RecordsFragment.RecordFragmentListener;
 import com.whereone.groupWallet.fragments.RelationshipsFragment;
 import com.whereone.groupWallet.fragments.RelationshipsFragment.RelationshipListener;
+import com.whereone.groupWallet.fragments.WalletInviteFragment;
+import com.whereone.groupWallet.fragments.WalletInviteFragment.WalletInviteFragmentListener;
 import com.whereone.groupWallet.fragments.WalletsFragment;
 import com.whereone.groupWallet.fragments.WalletsFragment.WalletFragmentListener;
-import com.whereone.groupwalletcake.GetData;
-import com.whereone.groupwalletcake.GetData.getDataListener;
-import com.whereone.groupwalletcake.LogOutCurrent;
-import com.whereone.groupwalletcake.R;
-/*
- * Notes TODO:
- * 	insert record -> clean up esp. with logout
- * 				  -> add record to local database and update
- */
+import com.whereone.groupWallet.models.Profile;
+import com.whereone.groupWallet.models.Record;
+import com.whereone.groupWallet.models.User;
+import com.whereone.groupWallet.models.Wallet;
+import com.whereone.groupWallet.models.WalletRelation;
+
 public class MainActivity extends Activity {
 	 
 	 private DrawerLayout mDrawerLayout;
@@ -60,87 +66,126 @@ public class MainActivity extends Activity {
 	 private CharSequence mTitle;
 	 private String[] mPlanetTitles;
 	 
-	 private DBhttpRequest httpRequest;
+	 private long time = 0;
+	 
+	 private GWApplication application;
 	 
 	 private final Fragment quickPay = new QuickPayFragment();
 	 private final Fragment records = new RecordsFragment();
 	 private final Fragment profileFrag = new ProfileFragment();
 	 private final Fragment walletFrag = new WalletsFragment();
 	 private final Fragment relationshipFrag = new RelationshipsFragment();
-	 private SharedPreferences profile;
-	 
-	 private LogOutCurrent logout;
-	 private GetData getData;
+	 private final Fragment recordDetailedFrag = new RecordDetailedFragment();
+	 private final Fragment addFrag = new AddFragment();
+	 private final Fragment walletInviteFrag = new WalletInviteFragment();
+
 	 private Fragment current;
+	 
+	 private GetData getData;
+	 private LogOutCurrent logOut;
+	 private Profile profileL;
+	 
+	 private LruCache<Integer, Drawable> picCache;
+	 
+	 private Boolean logOutFlag;
+	 private Boolean logOutGetData;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+		/*
+		Dialog dialog = new Dialog(this, android.R.style.Theme_NoTitleBar_Fullscreen);
+        dialog.addContentView(new View(this), (new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)));
+        dialog.show();
+		*/
 		setContentView(R.layout.activity_main);
-		
-		httpRequest = new DBhttpRequest();
 		
 		setupUI(findViewById(R.id.drawer_layout), this);
 		
-		final WalletsController walletTable = new WalletsController(this);
-		final WalletRelationsController walletRelationTable = new WalletRelationsController(this);
-		final UsersController userTable = new UsersController(this);
-		final TransactionsController transactionTable = new TransactionsController(this, null);
-		profile = this.getSharedPreferences("com.whereone.groupWallet.profile", Context.MODE_PRIVATE);
+		application = (GWApplication) this.getApplication();
 		
-		logout = new LogOutCurrent(profile, transactionTable, userTable, walletRelationTable, walletTable);
+		final TransactionsController transactionsController = TransactionsController.getInstance();
+		final WalletsController walletsController = WalletsController.getInstance();
+		final UsersController usersController = UsersController.getInstance();
+		final WalletRelationsController walletRelationsController = WalletRelationsController.getInstance();
 		
-		getData = new GetData(httpRequest, profile, transactionTable, userTable, walletRelationTable, walletTable);
-		getData.checkForNewData();
+		final DBhttpRequest httpRequest = DBhttpRequest.getInstance();
+		
+		profileL = Profile.getInstance();
+		
+		logOut = new LogOutCurrent(httpRequest, profileL, application);
+		
+		picCache = application.drawableCache;
+		
+		logOutFlag = false;
+		logOutGetData = false;
+		
+		((RecordsFragment) records).setCache(picCache);
+		((RecordDetailedFragment) recordDetailedFrag).setCache(picCache);
+		
+		getData = new GetData(httpRequest, profileL, transactionsController, walletRelationsController, walletsController, usersController);
 		
 		getData.setGetDataListener(new getDataListener(){
 
 			@Override
 			public void getWalletComplete(Integer result) {
 				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void insertWalletComplete() {
-				// TODO Auto-generated method stub
-				((QuickPayFragment) quickPay).walletsUpdated();
-				((WalletsFragment) walletFrag).walletsUpdated();
+				if(result == -1){
+					//logOutNow();
+					getData.cancel();
+					logOutGetData = true;
+				}
+				else if(result >= 0){
+					((WalletsFragment) walletFrag).walletsUpdated();
+				}
 			}
 
 			@Override
 			public void getRecordsComplete(Integer result) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void insertRecordsComplete() {
+				if(result == -1){
+					//logOutNow();
+					getData.cancel();
+					logOutGetData = true;
+				}
+				else if(result == 1){
+					((QuickPayFragment) quickPay).walletsUpdated();
+					((WalletsFragment) walletFrag).walletsUpdated();
+				}
 				((RecordsFragment) records).transactionsUpdated();
 				((RelationshipsFragment) relationshipFrag).walletRelationshipsUpdated();
 			}
 
 			@Override
-			public void getWalletRelationsComplete(Integer result) {
+			public void inviteWalletComplete(Integer result) {
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
-			public void insertWalletRelationsComplete(ArrayList<Integer> newRelations) {
-				((QuickPayFragment) quickPay).walletRelationsUpdated(newRelations);
+			public void getRelationsComplete(ArrayList<Integer> result,	ArrayList<WalletRelation> newRelations) {
+				if(result.contains(-1)){
+					//logOutNow();
+					getData.cancel();
+					logOutGetData = true;
+				}
+				if(newRelations != null){
+					((QuickPayFragment) quickPay).walletRelationsUpdated(newRelations);
+				}
 			}
 
 			@Override
-			public void getUserComplete(Integer result) {
-				// TODO Auto-generated method stub
-				
+			public void getUsersComplete(Integer result, ArrayList<Integer> results) {
+				((RelationshipsFragment) relationshipFrag).walletRelationshipsUpdated();
 			}
 
 			@Override
-			public void insertUserComplete(Integer userID) {
-				((QuickPayFragment) quickPay).userUpdated(userID);
+			public void getDataComplete(Boolean walletFailFlag,
+					Boolean relationFailFlag, Boolean transactionFailFlag,
+					Boolean walletInviteFailFlag, Boolean usersFailFlag) {
+				if(logOutGetData){
+					logOutGetData = false;
+					logOutNow();
+				}
 			}
 			
 		});
@@ -148,12 +193,18 @@ public class MainActivity extends Activity {
 		((WalletsFragment) walletFrag).setWalletFragmentListener( new WalletFragmentListener(){
 
 			@Override
-			public void walletClicked(Integer walletID) {
-				current = relationshipFrag;
-				((RelationshipsFragment) relationshipFrag).newWalletID(walletID);
-				getFragmentManager().beginTransaction().replace(R.id.container, relationshipFrag).commit();
-				mDrawerList.setItemChecked(4, true);
-		        setTitle(mPlanetTitles[4]);
+			public void walletClicked(Wallet wallet) {
+				showRelations(wallet, wallet.getID());
+			}
+
+			@Override
+			public void addWallet() {
+				showAdd(AddFragment.Type.WALLET, null);
+			}
+
+			@Override
+			public void load() {
+				getData.getWallets(profileL.getUserID());
 			}
 			
 		});
@@ -162,17 +213,116 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void walletNameClicked() {
-				current = walletFrag;
-				getFragmentManager().beginTransaction().replace(R.id.container, walletFrag).commit();
-				mDrawerList.setItemChecked(3, true);
-		        setTitle(mPlanetTitles[3]);
+				showWallets();
+			}
+
+			@Override
+			public void relationClicked(User user, Wallet wallet) {
+		        showTransactions(user, wallet);
+			}
+
+			@Override
+			public void addUserClicked(Wallet wallet) {
+				showAdd(AddFragment.Type.USER, wallet.getID());
+			}
+
+			@Override
+			public void load(Wallet wallet) {
+		    	if( wallet != null ){
+		    		ArrayList<Integer> tempWallet = new ArrayList<Integer>();
+			    	tempWallet.add(wallet.getID());
+			    	getData.getRelationsAndUsers(tempWallet);
+		    	}
+			}
+			
+		});
+		
+		((QuickPayFragment) quickPay).setQuickPayListener( new QuickPayListener(){
+
+			@Override
+			public void insertedRecord(Integer result) {
+				if(result == -1){
+					logOutNow();
+				}
+				else{
+					showTransactions(null, null);
+				}
+			}
+			
+		});
+		
+		((RecordsFragment) records).setRecordFragmentListener(new RecordFragmentListener(){
+
+			@Override
+			public void oweUserClicked(User user) {
+				showProfile(user);
+			}
+
+			@Override
+			public void owedUserClicked(User user) {
+				showProfile(user);
+			}
+
+			@Override
+			public void recordClicked(Record record) {
+				showDetailedTransaction(record);
+			}
+			
+		});
+		
+		((ProfileFragment) profileFrag).setProfileListener(new ProfileListener(){
+
+			@Override
+			public void walletsClicked() {
+				showWallets();
+			}
+			
+		});
+		
+		((AddFragment) addFrag).setAddListener(new AddListener(){
+
+			@Override
+			public void newWalletInserted() {
+				showWallets();
+			}
+
+			@Override
+			public void newUserInserted(final Integer walletID) {
+				runOnUiThread(new Runnable(){
+
+					@Override
+					public void run() {
+						showRelations(null, walletID);
+					}
+					
+				});
+				
+			}
+			
+		});
+		
+		((WalletInviteFragment) walletInviteFrag).setWalletInviteFragmentListener(new WalletInviteFragmentListener(){
+
+			@Override
+			public void walletClicked(Wallet wallet) {
+				  
+			}
+
+			@Override
+			public void accpeted(Wallet wallet) {
+				showRelations(wallet, wallet.getID());
+			}
+
+			@Override
+			public void failure(Integer result) {
+				if(result == -1){
+					logOutNow();
+				}
 			}
 			
 		});
 		
 		mTitle = mDrawerTitle = getTitle();
-		ArrayList<String> test = new ArrayList<String>();
-		test.add("lskdjfsdf"); test.add("eteme"); test.add("qwje");
         mPlanetTitles = getResources().getStringArray(R.array.options_array);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerList = (ListView) findViewById(R.id.left_drawer);
@@ -268,68 +418,130 @@ public class MainActivity extends Activity {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             selectItem(position);
-            getData.checkForNewData();
+            Calendar timeTemp = Calendar.getInstance();
+            if((timeTemp.getTime().getTime() - time) > 60000){
+            	time = timeTemp.getTime().getTime();
+            	getData.checkForNewData();
+            }
         }
     }
 
     private void selectItem(int position) {
     	switch (position){
     		case 0:
-    			if(current != profileFrag){
-	    			current = profileFrag;
-	    			getFragmentManager().beginTransaction().replace(R.id.container, profileFrag).commit();
-    			}
+    			showProfile(profileL);
     			break;
     		case 1:
-    			if(current != quickPay){
-	    			current = quickPay;
-	    			getFragmentManager().beginTransaction().replace(R.id.container, quickPay).commit();
-    			}
+    			showQuickPay();
     			break;
     		case 2:
-    			if(current != records){
-	    			current = records;
-	    			getFragmentManager().beginTransaction().replace(R.id.container, records).commit();
-    			}
+    			showTransactions(null, null);
     			break;
     		case 3:
-    			if(current != walletFrag){
-	    			current = walletFrag;
-	    			getFragmentManager().beginTransaction().replace(R.id.container, walletFrag).commit();
-    			}
+    			showWallets();
     			break;
     		case 4:
-    			if(current != relationshipFrag){
-	    			current = relationshipFrag;
-	    			getFragmentManager().beginTransaction().replace(R.id.container, relationshipFrag).commit();
-    			}
+    			showRelations(null, null);
     			break;
     		case 5:
-    			SimpleDateFormat s = new SimpleDateFormat("ddMMyyyyhhmmss", Locale.US);
-				String currentDate = s.format(new Date());
-				try {
-					mDrawerList.setItemChecked(position, true);
-			        setTitle(mPlanetTitles[position]);
-					logout.logOut(getApplicationContext(), httpRequest,
-	    					profile.getString("publicToken", ""), computeHash((profile.getString("privateToken", "") + currentDate)), currentDate);
-				} catch (NoSuchAlgorithmException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-	    			break;
+    			mDrawerList.setItemChecked(position, true);
+		        setTitle(mPlanetTitles[position]);
+    			logOutNow();
+	    		break;
+    		case 6:
+    			showInvites();
+    			break;
     		default:
     			break;
     	}
-    	
-    	mDrawerList.setItemChecked(position, true);
-        setTitle(mPlanetTitles[position]);
     	mDrawerLayout.closeDrawer(mDrawerList);
     }
+    
+    public void showProfile(User user){
+    	if(current != profileFrag){
+			((ProfileFragment)profileFrag).setUser(user);
+			current = profileFrag;
+			getFragmentManager().beginTransaction().replace(R.id.container, profileFrag).commit();
+			mDrawerList.setItemChecked(0, true);
+	        setTitle(mPlanetTitles[0]);
+		}
+    }
+    
+    public void showQuickPay(){
+    	if(current != quickPay){
+			current = quickPay;
+			getFragmentManager().beginTransaction().replace(R.id.container, quickPay).commit();
+			mDrawerList.setItemChecked(1, true);
+	        setTitle(mPlanetTitles[1]);
+    	}
+    }
+    
+    public void showTransactions(User user, Wallet wallet){
+    	if(current != records){
+			current = records;
+			((RecordsFragment)records).setUser(user);
+			((RecordsFragment)records).setWallet(wallet);
+			getFragmentManager().beginTransaction().replace(R.id.container, records).commit();
+			mDrawerList.setItemChecked(2, true);
+	        setTitle(mPlanetTitles[2]);
+		}
+    	else{
+			((RecordsFragment)records).update(user, wallet);
+    	}
+    }
+    
+    public void showWallets(){
+    	if(current != walletFrag){
+			current = walletFrag;
+			getFragmentManager().beginTransaction().replace(R.id.container, walletFrag).commit();
+			mDrawerList.setItemChecked(3, true);
+	        setTitle(mPlanetTitles[3]);
+		}
+    }
+    
+    public void showRelations(Wallet wallet, Integer walletID){
+    	if(current != relationshipFrag){
+			current = relationshipFrag;
+			((RelationshipsFragment) relationshipFrag).setWallet(wallet, walletID);
+			getFragmentManager().beginTransaction().replace(R.id.container, relationshipFrag).commit();
+			mDrawerList.setItemChecked(4, true);
+	        setTitle(mPlanetTitles[4]);
+		}
+    }
+    
+    public void showInvites(){
+    	if(current != walletInviteFrag){
+			current = walletInviteFrag;
+			getFragmentManager().beginTransaction().replace(R.id.container, walletInviteFrag).commit();
+			mDrawerList.setItemChecked(6, true);
+	        setTitle(mPlanetTitles[6]);
+		}
+    }
+    
+    public void showDetailedTransaction(Record record){
+    	if(current != recordDetailedFrag){
+	    	current = recordDetailedFrag;
+	    	((RecordDetailedFragment)recordDetailedFrag).setRecord(record);
+			getFragmentManager().beginTransaction().replace(R.id.container, recordDetailedFrag).commit();
+    	}
+    }
+    
+    public void showAdd(AddFragment.Type type, Integer walletID){
+    	if(current != addFrag){
+    		current = addFrag;
+	    	((AddFragment) addFrag).setType(type.ordinal(), walletID);
+			getFragmentManager().beginTransaction().replace(R.id.container, addFrag).commit();
+    	}
+    }
 
-    @Override
+    private void logOutNow() {
+    	if(!logOutFlag){
+	    	logOutFlag = true;
+	    	logOut.logOut();
+    	}
+	}
+
+	@Override
     public void setTitle(CharSequence title) {
         mTitle = title;
         getActionBar().setTitle(mTitle);
@@ -353,19 +565,6 @@ public class MainActivity extends Activity {
         // Pass any configuration change to the drawer toggls
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
-    
-    private String computeHash(String input) throws NoSuchAlgorithmException, UnsupportedEncodingException{
-	    MessageDigest digest = MessageDigest.getInstance("SHA-256");
-	    digest.reset();
-
-	    byte[] byteData = digest.digest(input.getBytes("UTF-8"));
-	    StringBuffer sb = new StringBuffer();
-
-	    for (int i = 0; i < byteData.length; i++){
-	      sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
-	    }
-	    return sb.toString();
-	}
     
     public static void hideSoftKeyboard(Context context2) {
 	    InputMethodManager inputMethodManager = (InputMethodManager)  context2.getSystemService(Activity.INPUT_METHOD_SERVICE);
@@ -398,4 +597,15 @@ public class MainActivity extends Activity {
 	        }
 	    }
 	}
+	
+	@Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) 
+    {
+        if(keyCode == KeyEvent.KEYCODE_BACK)
+        {
+            
+            return true;
+        }
+        return false;
+    }
 }
