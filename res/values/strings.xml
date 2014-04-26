@@ -38,7 +38,7 @@
     <string name="confirmRecord">Confirm</string>
     <string name="cancelRecord">Cancel</string>
     <string name="logout">logout</string>
-    <string name="title_activity_quick_pay_fragment">QuickPayFragment</string>
+    <string name="title_activity_quick_pay_fragment">Group Wallet</string>
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
 
