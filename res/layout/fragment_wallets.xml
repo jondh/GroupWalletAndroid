@@ -8,6 +8,7 @@
         android:id="@+id/wallets_new"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-condensed"
         android:text="@string/newWallet" />
 
     <RelativeLayout

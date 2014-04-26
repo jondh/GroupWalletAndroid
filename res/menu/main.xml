@@ -1,0 +1,16 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/badge"
+        android:actionLayout="@layout/feed_update_count"
+        android:icon="@drawable/shape_notification"
+        android:showAsAction="always">
+	</item>
+    <item 
+        android:id="@+id/sync"
+        android:icon="@android:drawable/ic_popup_sync"
+        android:showAsAction="always" >
+    </item>
+	
+
+</menu>

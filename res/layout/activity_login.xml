@@ -37,6 +37,7 @@
                 android:layout_below="@+id/loginError"
                 android:layout_marginTop="5dp"
                 android:ems="10"
+                android:fontFamily="sans-serif"
                 android:hint="@string/loginUser" />
 
             <EditText
@@ -47,6 +48,7 @@
                 android:layout_below="@+id/userLogin"
                 android:layout_marginTop="10dp"
                 android:ems="10"
+                android:fontFamily="sans-serif"
                 android:hint="@string/password"
                 android:inputType="textPassword" />
 
@@ -58,6 +60,7 @@
                 android:layout_below="@+id/password"
                 android:layout_marginRight="28dp"
                 android:layout_marginTop="15dp"
+                android:fontFamily="sans-serif-thin"
                 android:text="@string/loginButton" />
 
             <Button
@@ -69,6 +72,7 @@
                 android:layout_alignBottom="@+id/loginButton"
                 android:layout_alignParentLeft="true"
                 android:layout_marginLeft="30dp"
+                android:fontFamily="sans-serif-thin"
                 android:text="@string/back" />
 
             <requestFocus />
@@ -79,9 +83,11 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentTop="true"
+                android:fontFamily="sans-serif-thin"
                 android:text="@string/loginError"
                 android:textAppearance="?android:attr/textAppearanceLarge"
                 android:visibility="invisible" />
+
         </RelativeLayout>
     </RelativeLayout>
 
@@ -104,6 +110,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_margin="10dp"
+                android:fontFamily="sans-serif-thin"
                 android:text=" "
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 android:visibility="invisible" />
@@ -113,6 +120,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ems="10"
+                android:fontFamily="sans-serif"
                 android:hint="@string/username"
                 android:inputType="textFilter"
                 android:singleLine="true" />
@@ -122,6 +130,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ems="10"
+                android:fontFamily="sans-serif"
                 android:hint="@string/email"
                 android:inputType="textEmailAddress"
                 android:singleLine="true" />
@@ -131,6 +140,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ems="10"
+                android:fontFamily="sans-serif"
                 android:hint="@string/firstName"
                 android:inputType="textPersonName"
                 android:singleLine="true" />
@@ -140,6 +150,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ems="10"
+                android:fontFamily="sans-serif"
                 android:hint="@string/lastName"
                 android:inputType="textPersonName"
                 android:singleLine="true" />
@@ -150,6 +161,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
                 android:ems="10"
+                android:fontFamily="sans-serif"
                 android:hint="@string/password"
                 android:inputType="textPassword"
                 android:singleLine="true" />
@@ -159,6 +171,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ems="10"
+                android:fontFamily="sans-serif"
                 android:hint="@string/password_confirm"
                 android:inputType="textPassword"
                 android:singleLine="true" />
@@ -176,6 +189,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="left"
                     android:layout_weight="0.3"
+                    android:fontFamily="sans-serif-thin"
                     android:text="@string/back" />
 
                 <TextView
@@ -183,6 +197,7 @@
                     android:layout_width="0dip"
                     android:layout_height="wrap_content"
                     android:layout_weight="0.4"
+                    android:fontFamily="sans-serif-thin"
                     android:text=" "
                     android:textAppearance="?android:attr/textAppearanceSmall" />
 
@@ -191,6 +206,7 @@
                     android:layout_width="0dip"
                     android:layout_height="wrap_content"
                     android:layout_weight="0.3"
+                    android:fontFamily="sans-serif-thin"
                     android:gravity="center"
                     android:text="@string/submit" />
 
@@ -208,46 +224,43 @@
         android:id="@+id/login_mainLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/white"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_margin="0dp"
+        android:background="@color/GWblue"
         android:gravity="center|top"
         android:visibility="visible" >
 
         <ImageView
-            android:id="@+id/relation_pic"
+            android:id="@+id/login_logo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:layout_margin="25dp"
-            android:layout_marginTop="25dp"
-            android:src="@drawable/long_logo" />
+            android:layout_centerHorizontal="true"
+            android:layout_margin="15dp"
+            android:src="@drawable/logo_clear" />
         
+        <Button
+            android:id="@+id/login_login"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/login_logo"
+            android:background="@color/black_overlay"
+            android:fontFamily="sans-serif-thin"
+            android:text="@string/loginButton"
+            android:textColor="@color/white" />
+
         <Button
             android:id="@+id/login_newUser"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_below="@+id/login_login"
-            android:layout_margin="30dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="30dp"
+            android:background="@color/black_overlay"
             android:fontFamily="sans-serif-thin"
-            android:background="@color/blue"
             android:text="@string/login_newUser"
-            android:textColor="@color/white" />
-
-        <Button
-            android:id="@+id/login_login"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_below="@+id/relation_pic"
-            android:layout_marginBottom="30dp"
-            android:layout_marginLeft="30dp"
-            android:layout_marginRight="30dp"
-            android:fontFamily="sans-serif-thin"
-            android:layout_marginTop="17dp"
-            android:background="@color/blue"
-            android:text="@string/loginButton"
             android:textColor="@color/white" />
 
         <com.facebook.widget.LoginButton
@@ -256,7 +269,7 @@
             android:layout_height="wrap_content"
             android:layout_below="@+id/login_newUser"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="21dp"
+            android:layout_marginTop="40dp"
             android:text="LoginButton" />
 
     </RelativeLayout>

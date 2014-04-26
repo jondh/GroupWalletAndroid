@@ -5,5 +5,6 @@
 	<color name="white">#ffffffff</color>
 	<color name="black">#ff000000</color>
 	<color name="blue">#ff0000ff</color>
+	<color name="GWblue">#ff45b8fa</color>
 	
 </resources>

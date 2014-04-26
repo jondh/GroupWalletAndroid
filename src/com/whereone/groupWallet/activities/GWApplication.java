@@ -9,6 +9,7 @@ import android.util.LruCache;
 import com.whereone.groupWallet.LogOutCurrent;
 import com.whereone.groupWallet.LogOutCurrent.CheckUserListener;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
+import com.whereone.groupWallet.controllers.FriendsController;
 import com.whereone.groupWallet.controllers.TransactionsController;
 import com.whereone.groupWallet.controllers.UsersController;
 import com.whereone.groupWallet.controllers.WalletRelationsController;
@@ -22,6 +23,8 @@ public class GWApplication extends Application{
 	private WalletsController walletsController;
 	private UsersController usersController;
 	private WalletRelationsController walletRelationsController;
+	private FriendsController friendsController;
+	private Profile profile;
 	
 	public LruCache<Integer, Drawable> drawableCache;
 	
@@ -31,24 +34,25 @@ public class GWApplication extends Application{
 		
 		storedProfile = this.getSharedPreferences("com.whereone.groupWallet.profile", Context.MODE_PRIVATE);
 		
-		initSingletons();
 		initProfile();
+		initSingletons();
 		
 		transactionsController = TransactionsController.getInstance();
 		walletsController = WalletsController.getInstance();
 		usersController = UsersController.getInstance();
 		walletRelationsController = WalletRelationsController.getInstance();
+		friendsController = FriendsController.getInstance();
 		
 		drawableCache = new LruCache<Integer, Drawable>(20);
 	}
 	
 	public void initSingletons(){
-		Profile.init();
 		DBhttpRequest.init();
 		TransactionsController.init(this);
 		UsersController.init(this);
 		WalletRelationsController.init(this);
 		WalletsController.init(this);
+		FriendsController.init(this);
 	}
 	
 	public void clearData(){
@@ -56,6 +60,7 @@ public class GWApplication extends Application{
 		walletsController.removeAll();
 		usersController.removeAll();
 		walletRelationsController.removeAll();
+		friendsController.removeAll();
 		storedProfile.edit().clear();
 		storedProfile.edit().commit();
 	}
@@ -75,7 +80,9 @@ public class GWApplication extends Application{
 	}
 	
 	public void initProfile(){
-		Profile.getInstance().setProfile(storedProfile.getInt("id", 0),
+		Profile.init();
+		profile = Profile.getInstance();
+		profile.setProfile(storedProfile.getInt("id", 0),
 		storedProfile.getString("username", ""),
 		storedProfile.getString("password", ""),
 		storedProfile.getString("firstName", ""),

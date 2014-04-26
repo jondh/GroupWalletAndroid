@@ -6,6 +6,7 @@ import java.util.Calendar;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -23,6 +24,7 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 
@@ -31,12 +33,14 @@ import com.whereone.groupWallet.GetData.getDataListener;
 import com.whereone.groupWallet.LogOutCurrent;
 import com.whereone.groupWallet.R;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
+import com.whereone.groupWallet.controllers.FriendsController;
 import com.whereone.groupWallet.controllers.TransactionsController;
 import com.whereone.groupWallet.controllers.UsersController;
 import com.whereone.groupWallet.controllers.WalletRelationsController;
 import com.whereone.groupWallet.controllers.WalletsController;
 import com.whereone.groupWallet.fragments.AddFragment;
 import com.whereone.groupWallet.fragments.AddFragment.AddListener;
+import com.whereone.groupWallet.fragments.FragmentStack;
 import com.whereone.groupWallet.fragments.ProfileFragment;
 import com.whereone.groupWallet.fragments.ProfileFragment.ProfileListener;
 import com.whereone.groupWallet.fragments.QuickPayFragment;
@@ -50,6 +54,7 @@ import com.whereone.groupWallet.fragments.WalletInviteFragment;
 import com.whereone.groupWallet.fragments.WalletInviteFragment.WalletInviteFragmentListener;
 import com.whereone.groupWallet.fragments.WalletsFragment;
 import com.whereone.groupWallet.fragments.WalletsFragment.WalletFragmentListener;
+import com.whereone.groupWallet.models.Friend;
 import com.whereone.groupWallet.models.Profile;
 import com.whereone.groupWallet.models.Record;
 import com.whereone.groupWallet.models.User;
@@ -67,6 +72,8 @@ public class MainActivity extends Activity {
 	 private String[] mPlanetTitles;
 	 
 	 private long time = 0;
+	 
+	 private FragmentStack fragmentStack;
 	 
 	 private GWApplication application;
 	 
@@ -89,6 +96,9 @@ public class MainActivity extends Activity {
 	 
 	 private Boolean logOutFlag;
 	 private Boolean logOutGetData;
+	 private Integer numWalletInvites;
+	 
+	 private Intent demoIntent;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -102,12 +112,16 @@ public class MainActivity extends Activity {
 		
 		setupUI(findViewById(R.id.drawer_layout), this);
 		
+		fragmentStack = new FragmentStack();
+		
 		application = (GWApplication) this.getApplication();
+		demoIntent = new Intent(this, TutorialActivity.class);
 		
 		final TransactionsController transactionsController = TransactionsController.getInstance();
 		final WalletsController walletsController = WalletsController.getInstance();
 		final UsersController usersController = UsersController.getInstance();
 		final WalletRelationsController walletRelationsController = WalletRelationsController.getInstance();
+		final FriendsController friendsController = FriendsController.getInstance();
 		
 		final DBhttpRequest httpRequest = DBhttpRequest.getInstance();
 		
@@ -123,7 +137,7 @@ public class MainActivity extends Activity {
 		((RecordsFragment) records).setCache(picCache);
 		((RecordDetailedFragment) recordDetailedFrag).setCache(picCache);
 		
-		getData = new GetData(httpRequest, profileL, transactionsController, walletRelationsController, walletsController, usersController);
+		getData = new GetData(httpRequest, profileL, transactionsController, walletRelationsController, walletsController, usersController, friendsController);
 		
 		getData.setGetDataListener(new getDataListener(){
 
@@ -156,9 +170,11 @@ public class MainActivity extends Activity {
 			}
 
 			@Override
-			public void inviteWalletComplete(Integer result) {
-				// TODO Auto-generated method stub
-				
+			public void inviteWalletComplete(Integer result, ArrayList<Wallet> wallets) {
+				if(wallets != null){
+					numWalletInvites = getData.getNumInvites();
+					invalidateOptionsMenu();
+				}
 			}
 
 			@Override
@@ -169,8 +185,10 @@ public class MainActivity extends Activity {
 					logOutGetData = true;
 				}
 				if(newRelations != null){
-					((QuickPayFragment) quickPay).walletRelationsUpdated(newRelations);
-				}
+					if(current == quickPay){
+						((QuickPayFragment) quickPay).walletRelationsUpdated(newRelations);
+					}
+				}	
 			}
 
 			@Override
@@ -179,9 +197,19 @@ public class MainActivity extends Activity {
 			}
 
 			@Override
+			public void getFriendsComplete(Integer result, ArrayList<Friend> friends) {
+				if(friends != null && current == quickPay){
+					((QuickPayFragment) quickPay).friendsUpdated(friends);
+				}
+				numWalletInvites = getData.getNumInvites();
+				invalidateOptionsMenu();
+			}
+
+			@Override
 			public void getDataComplete(Boolean walletFailFlag,
 					Boolean relationFailFlag, Boolean transactionFailFlag,
-					Boolean walletInviteFailFlag, Boolean usersFailFlag) {
+					Boolean walletInviteFailFlag, Boolean usersFailFlag,
+					Boolean friendsFailFlag) {
 				if(logOutGetData){
 					logOutGetData = false;
 					logOutNow();
@@ -194,12 +222,12 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void walletClicked(Wallet wallet) {
-				showRelations(wallet, wallet.getID());
+				showRelations(wallet, wallet.getID(), true);
 			}
 
 			@Override
 			public void addWallet() {
-				showAdd(AddFragment.Type.WALLET, null);
+				showAdd(AddFragment.Type.WALLET, null, true);
 			}
 
 			@Override
@@ -213,17 +241,17 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void walletNameClicked() {
-				showWallets();
+				showWallets(true);
 			}
 
 			@Override
 			public void relationClicked(User user, Wallet wallet) {
-		        showTransactions(user, wallet);
+		        showTransactions(user, wallet, true);
 			}
 
 			@Override
 			public void addUserClicked(Wallet wallet) {
-				showAdd(AddFragment.Type.USER, wallet.getID());
+				showAdd(AddFragment.Type.USER, wallet.getID(), true);
 			}
 
 			@Override
@@ -245,7 +273,7 @@ public class MainActivity extends Activity {
 					logOutNow();
 				}
 				else{
-					showTransactions(null, null);
+					showTransactions(null, null, true);
 				}
 			}
 			
@@ -255,17 +283,22 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void oweUserClicked(User user) {
-				showProfile(user);
+				showProfile(user, true);
 			}
 
 			@Override
 			public void owedUserClicked(User user) {
-				showProfile(user);
+				showProfile(user, true);
 			}
 
 			@Override
 			public void recordClicked(Record record) {
-				showDetailedTransaction(record);
+				showDetailedTransaction(record, true);
+			}
+
+			@Override
+			public void update() {
+				getData.getTransactions();
 			}
 			
 		});
@@ -274,7 +307,7 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void walletsClicked() {
-				showWallets();
+				showWallets(true);
 			}
 			
 		});
@@ -283,7 +316,7 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void newWalletInserted() {
-				showWallets();
+				showWallets(true);
 			}
 
 			@Override
@@ -292,7 +325,7 @@ public class MainActivity extends Activity {
 
 					@Override
 					public void run() {
-						showRelations(null, walletID);
+						showRelations(null, walletID, true);
 					}
 					
 				});
@@ -304,13 +337,20 @@ public class MainActivity extends Activity {
 		((WalletInviteFragment) walletInviteFrag).setWalletInviteFragmentListener(new WalletInviteFragmentListener(){
 
 			@Override
-			public void walletClicked(Wallet wallet) {
+			public void walletClicked(Wallet wallet, Friend friend) {
 				  
 			}
 
 			@Override
-			public void accpeted(Wallet wallet) {
-				showRelations(wallet, wallet.getID());
+			public void accpeted(Wallet wallet, Friend friend) {
+				if(wallet == null){
+					showRelations(null, 0, true);
+				}
+				else{
+					showRelations(wallet, wallet.getID(), true);
+				}
+				numWalletInvites -= 1;
+				invalidateOptionsMenu();
 			}
 
 			@Override
@@ -371,7 +411,28 @@ public class MainActivity extends Activity {
 		//getMenuInflater().inflate(R.menu.quick_pay, menu);
 		//return true;
 		MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.quick_pay, menu);
+        inflater.inflate(R.menu.main, menu);
+        
+        if( numWalletInvites == null){
+        	numWalletInvites = getData.getNumInvites();
+        }
+        
+        View count = menu.findItem(R.id.badge).getActionView();
+        Button notifWalletCount;
+        notifWalletCount = (Button) count.findViewById(R.id.notif_count);
+        notifWalletCount.setText( numWalletInvites.toString() );
+        notifWalletCount.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				showInvites();
+			}
+		});
+        
+        if(numWalletInvites == 0){
+        	count.setVisibility(View.INVISIBLE);
+        }
+        
         return super.onCreateOptionsMenu(menu);
 	}
 
@@ -379,8 +440,14 @@ public class MainActivity extends Activity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         // If the nav drawer is open, hide action items related to the content view
-        boolean drawerOpen = mDrawerLayout.isDrawerOpen(mDrawerList);
-        menu.findItem(R.id.action_settings).setVisible(!drawerOpen);
+        //boolean drawerOpen = mDrawerLayout.isDrawerOpen(mDrawerList);
+       // menu.findItem(R.id.badge).setVisible(!drawerOpen);
+    	if (numWalletInvites == 0){
+    		menu.findItem(R.id.badge).setVisible(false);
+    	}
+    	else{
+    		menu.findItem(R.id.badge).setVisible(true);
+    	}
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -392,21 +459,13 @@ public class MainActivity extends Activity {
             return true;
         }
         
+        getData.getInvites(profileL.getUserID());
+        
         // Handle action buttons
         switch(item.getItemId()) {
-        case R.id.action_settings:
-            // create intent to perform web search for this planet
-        	/*
-            Intent intent = new Intent(Intent.ACTION_WEB_SEARCH);
-            intent.putExtra(SearchManager.QUERY, getActionBar().getTitle());
-            // catch event that there's no activity to handle intent
-            if (intent.resolveActivity(getPackageManager()) != null) {
-                startActivity(intent);
-            } else {
-                Toast.makeText(this, R.string.app_not_available, Toast.LENGTH_LONG).show();
-            }
-            */
-            return true;
+        case R.id.sync:
+        	syncData();
+        	return true;
         default:
             return super.onOptionsItemSelected(item);
         }
@@ -421,62 +480,73 @@ public class MainActivity extends Activity {
             Calendar timeTemp = Calendar.getInstance();
             if((timeTemp.getTime().getTime() - time) > 60000){
             	time = timeTemp.getTime().getTime();
-            	getData.checkForNewData();
+            	//getData.checkForNewData();
             }
         }
     }
 
     private void selectItem(int position) {
+    	System.out.println(position);
     	switch (position){
     		case 0:
-    			showProfile(profileL);
+    			showProfile(profileL, true);
     			break;
     		case 1:
-    			showQuickPay();
+    			showQuickPay(true);
     			break;
     		case 2:
-    			showTransactions(null, null);
+    			showTransactions(null, null, true);
     			break;
     		case 3:
-    			showWallets();
+    			showWallets(true);
     			break;
     		case 4:
-    			showRelations(null, null);
+    			showRelations(null, null, true);
     			break;
     		case 5:
     			mDrawerList.setItemChecked(position, true);
 		        setTitle(mPlanetTitles[position]);
+    			startActivity(demoIntent);
+    			break;
+    		case 6:
+    			mDrawerList.setItemChecked(position, true);
+		        setTitle(mPlanetTitles[position]);
     			logOutNow();
 	    		break;
-    		case 6:
-    			showInvites();
-    			break;
     		default:
     			break;
     	}
     	mDrawerLayout.closeDrawer(mDrawerList);
     }
     
-    public void showProfile(User user){
+    public void showProfile(User user, Boolean addToStack){
     	if(current != profileFrag){
 			((ProfileFragment)profileFrag).setUser(user);
 			current = profileFrag;
 			getFragmentManager().beginTransaction().replace(R.id.container, profileFrag).commit();
 			mDrawerList.setItemChecked(0, true);
 	        setTitle(mPlanetTitles[0]);
+	        
+	        if(addToStack){
+	        	fragmentStack.add(FragmentStack.FRAGMENT.Profile, null, null, null, null, null);
+	        }
 		}
     }
     
-    public void showQuickPay(){
+    public void showQuickPay(Boolean addToStack){
     	if(current != quickPay){
 			current = quickPay;
 			getFragmentManager().beginTransaction().replace(R.id.container, quickPay).commit();
 			mDrawerList.setItemChecked(1, true);
 	        setTitle(mPlanetTitles[1]);
+	        
+	        if(addToStack){
+	        	fragmentStack.add(FragmentStack.FRAGMENT.QuickPay, null, null, null, null, null);
+	        }
     	}
     }
     
-    public void showTransactions(User user, Wallet wallet){
+    public void showTransactions(User user, Wallet wallet, Boolean addToStack){
     	if(current != records){
 			current = records;
 			((RecordsFragment)records).setUser(user);
@@ -488,24 +558,35 @@ public class MainActivity extends Activity {
     	else{
 			((RecordsFragment)records).update(user, wallet);
     	}
+    	if(addToStack){
+    		fragmentStack.add(FragmentStack.FRAGMENT.Transaction, user, wallet, null, null, null);
+    	}
     }
     
-    public void showWallets(){
+    public void showWallets(Boolean addToStack){
     	if(current != walletFrag){
 			current = walletFrag;
 			getFragmentManager().beginTransaction().replace(R.id.container, walletFrag).commit();
 			mDrawerList.setItemChecked(3, true);
 	        setTitle(mPlanetTitles[3]);
+	        
+	        if(addToStack){
+	        	fragmentStack.add(FragmentStack.FRAGMENT.Wallet, null, null, null, null, null);
+	        }
 		}
     }
     
-    public void showRelations(Wallet wallet, Integer walletID){
+    public void showRelations(Wallet wallet, Integer walletID, Boolean addToStack){
     	if(current != relationshipFrag){
 			current = relationshipFrag;
 			((RelationshipsFragment) relationshipFrag).setWallet(wallet, walletID);
 			getFragmentManager().beginTransaction().replace(R.id.container, relationshipFrag).commit();
 			mDrawerList.setItemChecked(4, true);
 	        setTitle(mPlanetTitles[4]);
+	        
+	        if(addToStack){
+	        	fragmentStack.add(FragmentStack.FRAGMENT.Relation, null, wallet, walletID, null, null);
+	        }
 		}
     }
     
@@ -513,24 +594,29 @@ public class MainActivity extends Activity {
     	if(current != walletInviteFrag){
 			current = walletInviteFrag;
 			getFragmentManager().beginTransaction().replace(R.id.container, walletInviteFrag).commit();
-			mDrawerList.setItemChecked(6, true);
-	        setTitle(mPlanetTitles[6]);
 		}
     }
     
-    public void showDetailedTransaction(Record record){
+    public void showDetailedTransaction(Record record, Boolean addToStack){
     	if(current != recordDetailedFrag){
 	    	current = recordDetailedFrag;
 	    	((RecordDetailedFragment)recordDetailedFrag).setRecord(record);
 			getFragmentManager().beginTransaction().replace(R.id.container, recordDetailedFrag).commit();
+			
+			if(addToStack){
+				fragmentStack.add(FragmentStack.FRAGMENT.Relation, null, null, null, record, null);
+			}
     	}
     }
     
-    public void showAdd(AddFragment.Type type, Integer walletID){
+    public void showAdd(AddFragment.Type type, Integer walletID, Boolean addToStack){
     	if(current != addFrag){
     		current = addFrag;
 	    	((AddFragment) addFrag).setType(type.ordinal(), walletID);
 			getFragmentManager().beginTransaction().replace(R.id.container, addFrag).commit();
+			if(addToStack){
+				fragmentStack.add(FragmentStack.FRAGMENT.Relation, null, null, walletID, null, type);
+			}
     	}
     }
 
@@ -603,9 +689,54 @@ public class MainActivity extends Activity {
     {
         if(keyCode == KeyEvent.KEYCODE_BACK)
         {
+            FragmentStack.FragmentType popFrag = fragmentStack.remove();
             
+            if(popFrag != null){
+            
+	            if(popFrag.type == FragmentStack.FRAGMENT.Profile){
+	            	showProfile(popFrag.user, false);
+	            }
+	            else if(popFrag.type == FragmentStack.FRAGMENT.QuickPay){
+	            	showQuickPay(false);
+	            }
+	            else if(popFrag.type == FragmentStack.FRAGMENT.Transaction){
+	            	showTransactions(popFrag.user, popFrag.wallet, false);
+	            }
+	            else if(popFrag.type == FragmentStack.FRAGMENT.DetailedTransaction){
+	            	showDetailedTransaction(popFrag.record, false);
+	            }
+	            else if(popFrag.type == FragmentStack.FRAGMENT.Wallet){
+	            	showWallets(false);
+	            }
+	            else if(popFrag.type == FragmentStack.FRAGMENT.Relation){
+	            	showRelations(popFrag.wallet, popFrag.walletID, false);
+	            }
+	            else if(popFrag.type == FragmentStack.FRAGMENT.Add){
+	            	showAdd(popFrag.addType, popFrag.walletID, false);
+	            }
+	            
+            }
+        	
             return true;
         }
         return false;
     }
+	
+	private void syncData(){
+		if(current == walletFrag){
+			((WalletsFragment) walletFrag).update();
+		}
+		else if(current == relationshipFrag){
+			((RelationshipsFragment) relationshipFrag).update();
+		}
+		else if(current == records){
+			((RecordsFragment) records).update();
+		}
+	}
+	
+	@Override
+	public void onPause(){
+		super.onPause();
+	}
+    
 }

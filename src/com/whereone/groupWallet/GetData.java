@@ -13,6 +13,8 @@ import android.util.LruCache;
 import com.whereone.GetGravitarImage;
 import com.whereone.GetGravitarImage.GravitarImageListener;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
+import com.whereone.groupWallet.controllers.FriendsController;
+import com.whereone.groupWallet.controllers.FriendsController.FriendGetListener;
 import com.whereone.groupWallet.controllers.TransactionsController;
 import com.whereone.groupWallet.controllers.TransactionsController.TransactionsGetListener;
 import com.whereone.groupWallet.controllers.UsersController;
@@ -22,7 +24,9 @@ import com.whereone.groupWallet.controllers.WalletRelationsController.WalletRela
 import com.whereone.groupWallet.controllers.WalletsController;
 import com.whereone.groupWallet.controllers.WalletsController.WalletInviteListener;
 import com.whereone.groupWallet.controllers.WalletsController.walletsControllerListener;
+import com.whereone.groupWallet.models.Friend;
 import com.whereone.groupWallet.models.Profile;
+import com.whereone.groupWallet.models.Wallet;
 import com.whereone.groupWallet.models.WalletRelation;
 
 public class GetData {
@@ -35,11 +39,13 @@ public class GetData {
 	private WalletRelationsController walletRelationsController;
 	private WalletsController walletsController;
 	private UsersController usersController;
+	private FriendsController friendsController;
 	private Boolean walletFlag;
 	private Boolean relationFlag;
 	private Boolean transactionFlag;
 	private Boolean walletInvitesFlag;
 	private Boolean usersFlag;
+	private Boolean friendsFlag;
 	
 	private Completion completion;
 	
@@ -49,7 +55,8 @@ public class GetData {
 			TransactionsController transactionsController,
 			WalletRelationsController walletRelationsController,
 			WalletsController walletsController,
-			UsersController usersController){
+			UsersController usersController,
+			FriendsController friendsController){
 		
 		this.httpRequest = httpRequest;
 		this.profile = profile;
@@ -57,11 +64,13 @@ public class GetData {
 		this.walletRelationsController = walletRelationsController;
 		this.walletsController = walletsController;
 		this.usersController = usersController;
+		this.friendsController = friendsController;
 		
 		this.walletFlag = false;
 		this.relationFlag = false;
 		this.transactionFlag = false;
 		this.walletInvitesFlag = false;
+		this.friendsFlag = false;
 	}
 	
 	public void setGetDataListener(getDataListener _listener){
@@ -94,11 +103,13 @@ public class GetData {
 				if(walletsController.getWalletsUserID(profile.getUserID(), walletRelationsController, 1).size() == 0){
 					completion.override = true;
 					getWalletInvites(profile.getUserID(), completion);
+					getFriends(completion);
 				}
 				else{
 					getWalletInvites(profile.getUserID(), completion);
 					getRelations(completion, null);
 					getTransactions(completion);
+					getFriends(completion);
 				}
 			}
 			
@@ -136,6 +147,7 @@ public class GetData {
 					getWalletInvites(profile.getUserID(), completion);
 					getRelations(completion, drawableCache);
 					getTransactions(completion);
+					getFriends(completion);
 				}
 			}
 			
@@ -156,6 +168,47 @@ public class GetData {
 		}); // END walletsControllerListener
 	}
 	
+	public void getInvites(final Integer userIDfor){
+		
+		walletsController.setWalletInviteListener(new WalletInviteListener(){
+
+			@Override
+			public void getWalletInvitesComplete(Integer result, ArrayList<Wallet> wallets) {
+				listener.inviteWalletComplete(result, wallets);
+			}
+			
+		});
+		walletsController.findWalletInvites(httpRequest, walletRelationsController, profile, userIDfor);
+		
+		friendsController.setFriendGetListener(new FriendGetListener(){
+
+			@Override
+			public void getRelationsComplete(Integer result, ArrayList<Friend> newFriends) {
+				listener.getFriendsComplete(result, newFriends);
+			}
+			
+		});
+		
+		friendsController.findFriends(httpRequest, profile);
+	}
+	
+	public void getWalletInvites(final Integer userIDfor){
+		
+		walletsController.setWalletInviteListener(new WalletInviteListener(){
+
+			@Override
+			public void getWalletInvitesComplete(Integer result, ArrayList<Wallet> wallets) {
+				listener.inviteWalletComplete(result, wallets);
+			}
+			
+		});
+		walletsController.findWalletInvites(httpRequest, walletRelationsController, profile, userIDfor);
+	}
+	
+	public Integer getNumInvites(){
+		return walletRelationsController.getWalletsForUser(profile.getUserID(), 0).size() + friendsController.getFriendRequests(profile.getUserID()).size();
+	}
+	
 	public void getWalletInvites(final Integer userIDfor, final Completion completion){
 		
 		if(completion.cancel){
@@ -169,8 +222,8 @@ public class GetData {
 		walletsController.setWalletInviteListener(new WalletInviteListener(){
 
 			@Override
-			public void getWalletInvitesComplete(Integer result) {
-				listener.inviteWalletComplete(result);
+			public void getWalletInvitesComplete(Integer result, ArrayList<Wallet> wallets) {
+				listener.inviteWalletComplete(result, wallets);
 				
 				if(completion != null){
 					if(result == -2 || result == -3){
@@ -184,11 +237,51 @@ public class GetData {
 		});
 	}
 	
+	public void getFriends(){
+		
+		friendsController.setFriendGetListener(new FriendGetListener(){
+
+			@Override
+			public void getRelationsComplete(Integer result, ArrayList<Friend> newFriends) {
+				listener.getFriendsComplete(result, newFriends);
+			}
+			
+		});
+		
+		friendsController.findFriends(httpRequest, profile);
+		
+	}
+	
+	public void getFriends(final Completion completion){
+		if(completion.cancel){
+			completion.gotFriends = true;
+			completion.check();
+			return;
+		}
+		friendsController.setFriendGetListener(new FriendGetListener(){
+
+			@Override
+			public void getRelationsComplete(Integer result, ArrayList<Friend> newFriends) {
+				listener.getFriendsComplete(result, newFriends);
+				
+				if(result == 0 || result == 1){
+					completion.gotFriends = true;
+					completion.check();
+				}
+				if(result == -2 || result == -3){
+					friendsFlag = true;
+					completion.gotFriends = true;
+					completion.check();
+				}
+			}
+			
+		});
+		
+		friendsController.findFriends(httpRequest, profile);
+	}
+	
 	public void getTransactions(){
 	
-		transactionsController.findTransactions(httpRequest, profile, walletRelationsController.getWalletsForUser(profile.getUserID(), 1));
-	
-		
 		transactionsController.setTransactionsGetListener(new TransactionsGetListener(){
 
 			@Override
@@ -197,6 +290,8 @@ public class GetData {
 			}
 			
 		}); // END transactionsControllerListener
+		
+		transactionsController.findTransactions(httpRequest, profile, walletRelationsController.getWalletsForUser(profile.getUserID(), 1));
 	}
 	
 	private void getTransactions(final Completion completion){
@@ -360,11 +455,12 @@ public class GetData {
 	
 	public interface getDataListener{
 		public void getWalletComplete(Integer result);
-		public void inviteWalletComplete(Integer result);
+		public void inviteWalletComplete(Integer result, ArrayList<Wallet> wallets);
 		public void getRecordsComplete(Integer result);
 		public void getRelationsComplete(ArrayList<Integer> result, ArrayList<WalletRelation> newRelations);
 		public void getUsersComplete(Integer result, ArrayList<Integer> results);
-		public void getDataComplete(Boolean walletFailFlag, Boolean relationFailFlag, Boolean transactionFailFlag, Boolean walletInviteFailFlag, Boolean usersFailFlag);
+		public void getFriendsComplete(Integer result, ArrayList<Friend> friends);
+		public void getDataComplete(Boolean walletFailFlag, Boolean relationFailFlag, Boolean transactionFailFlag, Boolean walletInviteFailFlag, Boolean usersFailFlag, Boolean friendsFailFlag);
 	}
 	
 	public void loadPic(String email, final Integer userID, final Completion completion, final LruCache<Integer, Drawable> drawableCache){
@@ -400,6 +496,7 @@ public class GetData {
 		public Boolean gotTransactions = false;
 		public Boolean gotRelations = false;
 		public Boolean gotUsers = false;
+		public Boolean gotFriends = false;
 		public Boolean override = false;
 		public Boolean cancel = false;
 		
@@ -409,6 +506,7 @@ public class GetData {
 			gotRelations = false;
 			gotWalletInvites = false;
 			gotUsers = false;
+			gotFriends = false;
 			cancel = false;
 		}
 		
@@ -419,14 +517,14 @@ public class GetData {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			Log.i("check", gotWallets + " " + gotRelations + " " + gotTransactions + " " + gotWalletInvites + " " + gotUsers);
+			Log.i("check", gotWallets + " " + gotRelations + " " + gotTransactions + " " + gotWalletInvites + " " + gotUsers + " " + gotFriends);
 			if(override){
 				System.out.println("COMPLETE OVERRIDE");
-				listener.getDataComplete(walletFlag, relationFlag, transactionFlag, walletInvitesFlag, usersFlag);
+				listener.getDataComplete(walletFlag, relationFlag, transactionFlag, walletInvitesFlag, usersFlag, friendsFlag);
 			}
-			if(gotWallets && gotRelations && gotTransactions && gotWalletInvites && gotUsers){	
+			if(gotWallets && gotRelations && gotTransactions && gotWalletInvites && gotUsers && gotFriends){	
 				System.out.println("COMPLETE COMPLETE");
-				listener.getDataComplete(walletFlag, relationFlag, transactionFlag, walletInvitesFlag, usersFlag);	
+				listener.getDataComplete(walletFlag, relationFlag, transactionFlag, walletInvitesFlag, usersFlag, friendsFlag);	
 			}
 			checkAccess.release();
 		}

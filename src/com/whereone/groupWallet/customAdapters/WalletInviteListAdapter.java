@@ -20,12 +20,14 @@ import com.whereone.groupWallet.R;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
 import com.whereone.groupWallet.controllers.UsersController;
 import com.whereone.groupWallet.controllers.UsersController.UsersGetListener;
+import com.whereone.groupWallet.models.Friend;
 import com.whereone.groupWallet.models.Profile;
 import com.whereone.groupWallet.models.Wallet;
+import com.whereone.groupWallet.models.WalletFriend;
 
-public class WalletInviteListAdapter extends ArrayAdapter<Wallet> {
-	
-	private List<Wallet> wallets;
+public class WalletInviteListAdapter extends ArrayAdapter<WalletFriend> {
+
+	private List<WalletFriend> invites;
 	private UsersController usersController;
 	private WalletInviteListButtonListener buttonListener;
 	private WalletInviteResourceListener resourceListener;
@@ -35,8 +37,8 @@ public class WalletInviteListAdapter extends ArrayAdapter<Wallet> {
 	}
 	
 	public interface WalletInviteListButtonListener{
-		public void acceptClicked(Wallet wallet);
-		public void declineClicked(Wallet wallet);
+		public void acceptClicked(Wallet wallet, Friend friend);
+		public void declineClicked(Wallet wallet, Friend friend);
 	}
 	
 	public void setWalletInviteResourceListener(WalletInviteResourceListener listener){
@@ -52,20 +54,26 @@ public class WalletInviteListAdapter extends ArrayAdapter<Wallet> {
 	    
 	}
 
-	public WalletInviteListAdapter(Context context, int resource, List<Wallet> _wallets, UsersController usersController) {
+	public WalletInviteListAdapter(Context context, int resource, List<WalletFriend> invites, UsersController usersController) {
+		super(context, resource, invites);
 
-	    super(context, resource, _wallets);
-
-	    this.wallets = _wallets;
+	    this.invites = invites;
 	    this.usersController = usersController;
 	}
 	
 	public void loadResources(DBhttpRequest httpRequest, Profile profile){
 		final ArrayList<Integer> usersGot = new ArrayList<Integer>();
 		Integer temp = 0;
-		for(int i = 0; i < wallets.size(); i++){
-			if ( !usersController.containsId(wallets.get(i).getUserID() ) ){
-				temp++;
+		for(int i = 0; i < invites.size(); i++){
+			if( invites.get(i).wallet != null ){
+				if ( !usersController.containsId(invites.get(i).wallet.getUserID() ) ){
+					temp++;
+				}
+			}
+			else{
+				if ( !usersController.containsId(invites.get(i).friend.getUser1() ) ){
+					temp++;
+				}
 			}
 		}
 		final Integer numFindUsers = temp;
@@ -88,9 +96,16 @@ public class WalletInviteListAdapter extends ArrayAdapter<Wallet> {
 				}
 				
 			});
-			for(int i = 0; i < wallets.size(); i++){
-				if ( !usersController.containsId(wallets.get(i).getUserID() ) ){
-					usersController.getUserAndInsert( httpRequest, profile, wallets.get(i).getUserID() );
+			for(int i = 0; i < invites.size(); i++){
+				if(invites.get(i).wallet != null){
+					if ( !usersController.containsId(invites.get(i).wallet.getUserID() ) ){
+						usersController.getUserAndInsert( httpRequest, profile, invites.get(i).wallet.getUserID() );
+					}
+				}
+				else{
+					if ( !usersController.containsId(invites.get(i).friend.getUser1() ) ){
+						usersController.getUserAndInsert( httpRequest, profile, invites.get(i).friend.getUser1() );
+					}
 				}
 			}
 		}
@@ -111,15 +126,16 @@ public class WalletInviteListAdapter extends ArrayAdapter<Wallet> {
 
 	    }
 
-	    final Wallet wallet = wallets.get(position);
+	    final WalletFriend walletFriend = invites.get(position);
+	    final Wallet wallet = walletFriend.wallet;
+	    final Friend friend = walletFriend.friend;
+	    
+	    AutoResizeTextView walletName = (AutoResizeTextView) v.findViewById(R.id.wallet_invite_walletName); 
+    	AutoResizeTextView byName = (AutoResizeTextView) v.findViewById(R.id.wallet_invite_byName);
+        Button accept = (Button) v.findViewById(R.id.wallet_invite_accept);
+        Button decline = (Button) v.findViewById(R.id.wallet_invite_decline);
 
 	    if (wallet != null) {
-
-	    	
-	    	AutoResizeTextView walletName = (AutoResizeTextView) v.findViewById(R.id.wallet_invite_walletName); 
-	    	AutoResizeTextView byName = (AutoResizeTextView) v.findViewById(R.id.wallet_invite_byName);
-	        Button accept = (Button) v.findViewById(R.id.wallet_invite_accept);
-	        Button decline = (Button) v.findViewById(R.id.wallet_invite_decline);
 
 	        if (walletName != null) {
 	        	String wname = wallet.getName();
@@ -131,26 +147,39 @@ public class WalletInviteListAdapter extends ArrayAdapter<Wallet> {
 	        	byName.setText("By: @" + bName);
 	        }
 	        
-	        accept.setOnClickListener(new View.OnClickListener() {
-				
-				@Override
-				public void onClick(View v) {
-					if(buttonListener != null){
-						buttonListener.acceptClicked(wallet);
-					}
-				}
-			});
-	        
-	        decline.setOnClickListener(new View.OnClickListener() {
-				
-				@Override
-				public void onClick(View v) {
-					if(buttonListener != null){
-						buttonListener.declineClicked(wallet);
-					}
-				}
-			});
 	    }
+	    else if (friend != null){
+	    	
+	    	if (walletName != null) {
+	        	walletName.setText( "Friend Request" );
+	        }
+	       
+	        if (byName != null) {
+	        	String bName = usersController.getUserNameFromId( friend.getUser1() );
+	        	byName.setText("From: @" + bName);
+	        }
+	    	
+	    }
+	    
+	    accept.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				if(buttonListener != null){
+					buttonListener.acceptClicked(wallet, friend);
+				}
+			}
+		});
+        
+        decline.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				if(buttonListener != null){
+					buttonListener.declineClicked(wallet, friend);
+				}
+			}
+		});
 
 	    return v;
 

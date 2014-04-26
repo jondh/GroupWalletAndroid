@@ -8,6 +8,7 @@
         android:id="@+id/dialog_owed_row1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-thin"
         android:text="Large Text"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
@@ -15,6 +16,7 @@
         android:id="@+id/dialog_owed_row2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-thin"
         android:text="Large Text"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
@@ -22,6 +24,7 @@
         android:id="@+id/dialog_owed_row3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-thin"
         android:text="Large Text"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 

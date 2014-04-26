@@ -94,7 +94,7 @@ public class WalletsController extends SQLiteOpenHelper {
 	}
 	
 	public interface WalletInviteListener{
-		public void getWalletInvitesComplete(Integer result);
+		public void getWalletInvitesComplete(Integer result, ArrayList<Wallet> wallets);
 	}
 	
 	protected void insertWallets(ArrayList<Wallet> wallets){
@@ -184,6 +184,7 @@ public class WalletsController extends SQLiteOpenHelper {
 	}
 	
 	public Wallet getWalletFromId(Integer wallet_id){
+		if(wallet_id == null){ return null; }
 		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
 				COLUMN_ID,
@@ -323,6 +324,31 @@ public class WalletsController extends SQLiteOpenHelper {
         }
 	}
 	
+	public Boolean containsID(Integer id){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+		String[] columns = {
+				COLUMN_ID
+		};
+		
+		String whereClause = "id = ?";
+		String[] whereArgs = new String[]{
+			id.toString()
+		};
+		
+		Cursor cursor = databaseR.query(TABLE_WALLETS, columns, whereClause, whereArgs, null, null, null);
+		
+		if(cursor.getCount() >0)
+        {
+            databaseR.close();
+            return true;
+        }
+        else
+        {
+        	databaseR.close();
+            return false;
+        }
+	}
+	
 	public Integer getNumberWallets(){
 		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
@@ -411,7 +437,7 @@ public class WalletsController extends SQLiteOpenHelper {
         }
 	}
 
-	public void findWallets(DBhttpRequest httpRequest, final WalletRelationsController walletRelationsController, Profile profile, Integer userID){
+	public void findWallets(DBhttpRequest httpRequest, final WalletRelationsController walletRelationsController, final Profile profile, Integer userID){
 		GetWallets getWallets = new GetWallets(httpRequest, profile, this.getWalletIds(), userID, 1);
 		
 	   	getWallets.setWalletsListener(new getWalletsListener(){
@@ -427,9 +453,15 @@ public class WalletsController extends SQLiteOpenHelper {
 				Integer result;
 				if(_wallets != null || wrs != null){
 					if(_wallets != null){
+						if( !instance.containsID(0) ){
+							_wallets.add(0, new Wallet(0,"Friends",profile.getCurrentDate(),profile.getUserID()));
+						}
 						instance.insertWallets(_wallets);
 					}
 					if(wrs != null){
+						if( !walletRelationsController.containsID(0) ){
+							wrs.add( new WalletRelation(0,0,profile.getUserID(),true) );
+						}
 						walletRelationsController.insertWalletRelations(wrs);
 					}
 					instance.listener.getWalletComplete(1);
@@ -447,6 +479,19 @@ public class WalletsController extends SQLiteOpenHelper {
 					else{
 						result = -1;
 					}
+					
+					if( !instance.containsID(0) ){
+						ArrayList<Wallet> tempWallets = new ArrayList<Wallet>();
+						tempWallets.add(0, new Wallet(0,"Friends",profile.getCurrentDate(),profile.getUserID()));
+						instance.insertWallets(tempWallets);
+					}
+					
+					if( !walletRelationsController.containsID(0) ){
+						ArrayList<WalletRelation> tempWrs = new ArrayList<WalletRelation>();
+						tempWrs.add( new WalletRelation(0,0,profile.getUserID(),true) );
+						walletRelationsController.insertWalletRelations(tempWrs);
+					}
+					
 					if(instance.listener != null){
 						instance.listener.getWalletComplete(result);
 					}
@@ -487,7 +532,7 @@ public class WalletsController extends SQLiteOpenHelper {
 					if(_wallets != null){
 						instance.insertWallets(_wallets);
 					
-						instance.inviteListener.getWalletInvitesComplete(1);
+						instance.inviteListener.getWalletInvitesComplete(1, _wallets);
 						
 					}
 					if(wrs != null){
@@ -508,7 +553,7 @@ public class WalletsController extends SQLiteOpenHelper {
 						result = -1;
 					}
 					if(instance.listener != null){
-						instance.inviteListener.getWalletInvitesComplete(result);
+						instance.inviteListener.getWalletInvitesComplete(result, null);
 					}
 				}
 				

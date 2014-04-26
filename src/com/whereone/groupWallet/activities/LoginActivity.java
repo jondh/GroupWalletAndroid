@@ -73,6 +73,11 @@ public class LoginActivity extends Activity {
             Log.i("HelloFacebook", "Success!");
         }
     };
+    
+    private RelativeLayout loginLayout;
+    private ScrollView newUserScroll;
+    private LinearLayout newUserLayout;
+    private RelativeLayout mainLayout;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -93,13 +98,13 @@ public class LoginActivity extends Activity {
 		
 		final TextValidate validator = new TextValidate();
 		
-		final RelativeLayout mainLayout = (RelativeLayout) findViewById(R.id.login_mainLayout);
+		mainLayout = (RelativeLayout) findViewById(R.id.login_mainLayout);
 		Button login_login = (Button) findViewById(R.id.login_login);
 		Button login_newUser = (Button) findViewById(R.id.login_newUser);
 		final LoginButton facebookLogin = (LoginButton) findViewById(R.id.login_facebook);
 		
-		final ScrollView newUserScroll = (ScrollView) findViewById(R.id.login_new_scroll);
-		final LinearLayout newUserLayout = (LinearLayout) findViewById(R.id.login_new);
+		newUserScroll = (ScrollView) findViewById(R.id.login_new_scroll);
+		newUserLayout = (LinearLayout) findViewById(R.id.login_new);
 		final EditText new_username = (EditText) findViewById(R.id.login_new_username);
 		final EditText new_firstname = (EditText) findViewById(R.id.login_new_firstName);
 		final EditText new_lastname = (EditText) findViewById(R.id.login_new_lastName);
@@ -110,7 +115,7 @@ public class LoginActivity extends Activity {
 		Button new_submit = (Button) findViewById(R.id.login_new_submit);
 		Button new_back = (Button) findViewById(R.id.login_new_back);
 		
-		final RelativeLayout loginLayout = (RelativeLayout) findViewById(R.id.login_loginLayout);
+		loginLayout = (RelativeLayout) findViewById(R.id.login_loginLayout);
 		final TextView loginError = (TextView) findViewById(R.id.loginError);
 		final EditText userLogin = (EditText) findViewById(R.id.userLogin);
 		final EditText passwordLogin = (EditText) findViewById(R.id.password);
@@ -338,6 +343,7 @@ public class LoginActivity extends Activity {
 		        	   			UsersController.getInstance().insertUser(Profile.getInstance());
 		        	   			
 		        	   			mPDialog.hide();  
+		        	   			intent.putExtra("NewUser", true);
 		        	   			startActivity(intent);
 	        	   			}
 							else if(result.contains("not unique") || result.contains("bad")){
@@ -411,6 +417,7 @@ public class LoginActivity extends Activity {
 	        	   			UsersController.getInstance().insertUser(Profile.getInstance());
 	        	   			
 	        	   			mPDialog.hide();  
+	        	   			intent.putExtra("NewUser", false);
 	        	   			startActivity(intent);
         	   			}
         	   			else if(result.contains("timeout")){
@@ -485,7 +492,7 @@ public class LoginActivity extends Activity {
         }
     }
     
-    public void logInFacebook(final Context context, final Session session, Boolean newUser){
+    public void logInFacebook(final Context context, final Session session, final Boolean newUser){
     	LogInFacebook logInFacebook = new LogInFacebook(DBhttpRequest.getInstance(), graphUser, session.getAccessToken(), newUser);
     	mPDialog.setMessage("Loading...");
 	    mPDialog.show();  
@@ -507,6 +514,7 @@ public class LoginActivity extends Activity {
     	   			UsersController.getInstance().insertUser(Profile.getInstance());
     	   			
     	   			mPDialog.hide();  
+    	   			intent.putExtra("NewUser", newUser);
     	   			startActivity(intent);
 				}
 				else if(result.contains("none")){
@@ -563,7 +571,10 @@ public class LoginActivity extends Activity {
     {
         if(keyCode == KeyEvent.KEYCODE_BACK)
         {
-            
+        	mainLayout.setVisibility(View.VISIBLE);
+			loginLayout.setVisibility(View.INVISIBLE);
+			newUserScroll.setVisibility(View.INVISIBLE);
+			newUserLayout.setVisibility(View.INVISIBLE);
             return true;
         }
         return false;

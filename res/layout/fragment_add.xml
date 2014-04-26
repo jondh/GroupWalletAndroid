@@ -18,6 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
+            android:fontFamily="sans-serif-bold"
             android:hint="name, username, or email"
             android:inputType="textNoSuggestions" >
 
@@ -51,6 +52,7 @@
             android:layout_height="0dip"
             android:layout_weight="0.1"
             android:ems="10"
+            android:fontFamily="sans-serif-bold"
             android:hint="wallet name"
             android:textSize="20sp" />
 
@@ -60,6 +62,7 @@
             android:layout_height="0dip"
             android:layout_margin="10dp"
             android:layout_weight="0.1"
+            android:fontFamily="sans-serif-thin"
             android:text="Invite User" />
 
         <ListView
@@ -76,6 +79,7 @@
             android:layout_gravity="right"
             android:layout_margin="10dp"
             android:layout_weight="0.1"
+            android:fontFamily="sans-serif-thin"
             android:text="@string/submit" />
 
     </LinearLayout>

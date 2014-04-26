@@ -52,8 +52,9 @@ import android.util.Log;
 
 import com.whereone.groupWallet.controllers.DBhttpRequest;
 import com.whereone.groupWallet.models.Profile;
+import com.whereone.groupWallet.models.Record;
 
-public class InsertRecord extends AsyncTask<String, Void, Boolean>{
+public class InsertRecord extends AsyncTask<String, Void, Record>{
 	private Integer userID;
 	private Integer otherUID;
 	private String amount;
@@ -85,7 +86,7 @@ public class InsertRecord extends AsyncTask<String, Void, Boolean>{
     }
 	
 	@Override
-	protected Boolean doInBackground(String... arg0) {
+	protected Record doInBackground(String... arg0) {
 		String url = arg0[0];
 		ArrayList<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
 		
@@ -104,7 +105,19 @@ public class InsertRecord extends AsyncTask<String, Void, Boolean>{
 		try {
 			JSONObject jObject = new JSONObject(result);
 			String jResult = jObject.getString("result");
-			if(jResult.contains( "success" )) return true;
+			if(jResult.contains( "success" )){
+				JSONObject jWR = jObject.getJSONObject("Transaction");
+				resultType = "success";
+				return new Record(
+						jWR.getInt("transaction_id"),
+						jWR.getInt("oweUID"),
+						jWR.getInt("owedUID"),
+						jWR.getDouble("amount"),
+						jWR.getInt("wallet_id"),
+						jWR.getString("comments"),
+						jWR.getString("dateTime")
+					);
+			}
 			else if(jResult.contains("timeout")){
 				resultType = "timeout";
 			}
@@ -116,14 +129,14 @@ public class InsertRecord extends AsyncTask<String, Void, Boolean>{
 			}
 			return null;
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
+			resultType = "failure";
 			e.printStackTrace();
-			return false;
+			return null;
 		}
 	}
 	
 	@Override
-	protected void onPostExecute(final Boolean result) {
+	protected void onPostExecute(final Record result) {
 		listener.insertRecordComplete(result, resultType);
 	}
 
@@ -134,7 +147,7 @@ public class InsertRecord extends AsyncTask<String, Void, Boolean>{
 	
 	public interface insertRecordListener{
 		public void insertRecordPreExecute();
-		public void insertRecordComplete(Boolean result, String resultString);
+		public void insertRecordComplete(Record result, String resultString);
 		public void insertRecordCancelled();
 	}
 }

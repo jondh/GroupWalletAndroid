@@ -3,7 +3,9 @@ package com.whereone.groupWallet.activities;
 import java.util.ArrayList;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -15,11 +17,14 @@ import com.whereone.groupWallet.LogOutCurrent;
 import com.whereone.groupWallet.LogOutCurrent.CheckUserListener;
 import com.whereone.groupWallet.R;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
+import com.whereone.groupWallet.controllers.FriendsController;
 import com.whereone.groupWallet.controllers.TransactionsController;
 import com.whereone.groupWallet.controllers.UsersController;
 import com.whereone.groupWallet.controllers.WalletRelationsController;
 import com.whereone.groupWallet.controllers.WalletsController;
+import com.whereone.groupWallet.models.Friend;
 import com.whereone.groupWallet.models.Profile;
+import com.whereone.groupWallet.models.Wallet;
 import com.whereone.groupWallet.models.WalletRelation;
 import com.whereone.groupwalletcake.util.SystemUiHider;
 
@@ -39,6 +44,9 @@ public class StartupActivity extends Activity {
 
 		setContentView(R.layout.activity_startup);
 		
+		Intent prevIntent = getIntent();
+		final Boolean newUser = prevIntent.getBooleanExtra("NewUser", false);
+		
 		application = (GWApplication) getApplication();
 		final Context context = this;
 		
@@ -51,14 +59,16 @@ public class StartupActivity extends Activity {
 		final WalletsController walletsController = WalletsController.getInstance();
 		final UsersController usersController = UsersController.getInstance();
 		final WalletRelationsController walletRelationsController = WalletRelationsController.getInstance();
+		final FriendsController friendsController = FriendsController.getInstance();
 		
 		final DBhttpRequest httpRequest = DBhttpRequest.getInstance();
 		
 		final Profile profileL = Profile.getInstance();
 		
-		final GetData getData = new GetData(httpRequest, profileL, transactionsController, walletRelationsController, walletsController, usersController);
+		final GetData getData = new GetData(httpRequest, profileL, transactionsController, walletRelationsController, walletsController, usersController, friendsController);
 		
 		final Intent mainIntent = new Intent(this, MainActivity.class);
+		final Intent demoIntent = new Intent(this, TutorialActivity.class);
 		final Intent loginIntent = new Intent(this, LoginActivity.class);
 	
 		
@@ -87,7 +97,7 @@ public class StartupActivity extends Activity {
 						}
 
 						@Override
-						public void inviteWalletComplete(Integer result) {
+						public void inviteWalletComplete(Integer result, ArrayList<Wallet> wallets) {
 							// TODO Auto-generated method stub
 							
 						}
@@ -107,13 +117,38 @@ public class StartupActivity extends Activity {
 						}
 
 						@Override
+						public void getFriendsComplete(Integer result,
+								ArrayList<Friend> friends) {
+							// TODO Auto-generated method stub
+							
+						}
+
+						@Override
 						public void getDataComplete(Boolean walletFailFlag,
 								Boolean relationFailFlag,
 								Boolean transactionFailFlag,
 								Boolean walletInviteFailFlag,
-								Boolean usersFailFlag) {
+								Boolean usersFailFlag, Boolean friendsFailFlag) {
 							spinImage.stopRunning();
-							startActivity(mainIntent);
+							if(newUser){
+								new AlertDialog.Builder(context)
+							    .setTitle(null)
+							    .setMessage("Would you like to see how to use Group Wallet?")
+							    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+							        public void onClick(DialogInterface dialog, int which) { 
+							        	startActivity(demoIntent);
+							        }
+							     })
+							    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+							        public void onClick(DialogInterface dialog, int which) { 
+							        	startActivity(mainIntent);
+							        }
+							     })
+							     .show();
+							}
+							else{
+								startActivity(mainIntent);
+							}
 						}
 						
 					});

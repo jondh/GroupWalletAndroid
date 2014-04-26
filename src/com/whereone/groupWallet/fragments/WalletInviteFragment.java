@@ -11,9 +11,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 
+import com.whereone.groupWallet.AcceptDeclineFriend;
 import com.whereone.groupWallet.AcceptDeclineWallet;
 import com.whereone.groupWallet.R;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
+import com.whereone.groupWallet.controllers.FriendsController;
+import com.whereone.groupWallet.controllers.FriendsController.UpdateFriendsListener;
 import com.whereone.groupWallet.controllers.UsersController;
 import com.whereone.groupWallet.controllers.WalletRelationsController;
 import com.whereone.groupWallet.controllers.WalletRelationsController.UpdateListener;
@@ -21,8 +24,10 @@ import com.whereone.groupWallet.controllers.WalletsController;
 import com.whereone.groupWallet.customAdapters.WalletInviteListAdapter;
 import com.whereone.groupWallet.customAdapters.WalletInviteListAdapter.WalletInviteListButtonListener;
 import com.whereone.groupWallet.customAdapters.WalletInviteListAdapter.WalletInviteResourceListener;
+import com.whereone.groupWallet.models.Friend;
 import com.whereone.groupWallet.models.Profile;
 import com.whereone.groupWallet.models.Wallet;
+import com.whereone.groupWallet.models.WalletFriend;
 
 public class WalletInviteFragment extends ListFragment{
 	
@@ -31,9 +36,10 @@ public class WalletInviteFragment extends ListFragment{
 	private UsersController usersController;
 	private WalletsController walletsController;
 	private WalletRelationsController walletRelationsController;
+	private FriendsController friendsController;
 	private Profile profile;
 	private DBhttpRequest httpRequest;
-	private ArrayList<Wallet> wallets;
+	private ArrayList<WalletFriend> invites;
 	private ProgressDialog mpDialog;
 	
 	public void walletInvitesUpdated(){
@@ -55,8 +61,8 @@ public class WalletInviteFragment extends ListFragment{
 	}
 	
 	public interface WalletInviteFragmentListener{
-		public void walletClicked(Wallet wallet);
-		public void accpeted(Wallet wallet);
+		public void walletClicked(Wallet wallet, Friend friend);
+		public void accpeted(Wallet wallet, Friend friend);
 		public void failure(Integer result);
 	}
 	
@@ -77,7 +83,10 @@ public class WalletInviteFragment extends ListFragment{
 		walletsController = WalletsController.getInstance();
 		walletRelationsController = WalletRelationsController.getInstance();
 		usersController = UsersController.getInstance();
+		friendsController = FriendsController.getInstance();
 		httpRequest = DBhttpRequest.getInstance();
+		
+		invites = new ArrayList<WalletFriend>();
 		
 		mpDialog = new ProgressDialog(context);
 		mpDialog.setMessage("loading");
@@ -96,9 +105,16 @@ public class WalletInviteFragment extends ListFragment{
 	}
 	
 	private void setList(final Context context){
-		wallets = walletsController.getWalletsUserID(profile.getUserID(), walletRelationsController, 0);
+		ArrayList<Wallet> wallets = walletsController.getWalletsUserID(profile.getUserID(), walletRelationsController, 0);
+		ArrayList<Friend> friends = friendsController.getFriendRequests(profile.getUserID());
+		for(int i = 0; i < wallets.size(); i++){
+			invites.add( new WalletFriend(wallets.get(i), null) );
+		}
+		for(int i = 0; i < friends.size(); i++){
+			invites.add( new WalletFriend(null, friends.get(i)) );
+		}
 		if(wallets != null){
-			final WalletInviteListAdapter wadapter = new WalletInviteListAdapter(context, R.layout.wallet_invite_row, wallets, usersController);
+			final WalletInviteListAdapter wadapter = new WalletInviteListAdapter(context, R.layout.wallet_invite_row, invites, usersController);
 			
 			wadapter.setWalletInviteResourceListener(new WalletInviteResourceListener(){
 
@@ -111,43 +127,86 @@ public class WalletInviteFragment extends ListFragment{
 							wadapter.setWalletInviteListButtonListener(new WalletInviteListButtonListener(){
 
 								@Override
-								public void acceptClicked(final Wallet wallet) {
+								public void acceptClicked(final Wallet wallet, final Friend friend) {
 									mpDialog.show();
-									walletRelationsController.setUpdateListener(new UpdateListener(){
-
-										@Override
-										public void acceptDeclineComplete(Integer result) {
-											mpDialog.hide();
-											if(result == 1){
-												listener.accpeted(wallet);
+									
+									if(wallet != null){
+									
+										walletRelationsController.setUpdateListener(new UpdateListener(){
+	
+											@Override
+											public void acceptDeclineComplete(Integer result) {
+												mpDialog.hide();
+												if(result == 1){
+													listener.accpeted(wallet, friend);
+												}
+												else{
+													listener.failure(result);
+												}
 											}
-											else{
-												listener.failure(result);
-											}
-										}
+											
+										});
 										
-									});
-									walletRelationsController.acceptDeclineWallet(httpRequest, profile, wallet.getID(), AcceptDeclineWallet.Type.ACCEPT);
+										walletRelationsController.acceptDeclineWallet(httpRequest, profile, wallet.getID(), AcceptDeclineWallet.Type.ACCEPT);
+									}
+									else if(friend != null){	
+										friendsController.setUpdateListener(new UpdateFriendsListener(){
+
+											@Override
+											public void acceptDeclineComplete(Integer result) {
+												mpDialog.hide();
+												if(result == 1){
+													listener.accpeted(wallet, friend);
+												}
+												else{
+													listener.failure(result);
+												}
+											}
+											
+										});
+										
+										friendsController.acceptDeclineFriend(httpRequest, profile, friend, AcceptDeclineFriend.Type.ACCEPT);
+									}
 								}
-
 								@Override
-								public void declineClicked(Wallet wallet) {
+								public void declineClicked(Wallet wallet, Friend friend) {
 									mpDialog.show();
-									walletRelationsController.setUpdateListener(new UpdateListener(){
+									
+									if(wallet != null){
+										walletRelationsController.setUpdateListener(new UpdateListener(){
+	
+											@Override
+											public void acceptDeclineComplete(Integer result) {
+												mpDialog.hide();
+												if(result == 1){
+													setList(context);
+												}
+												else{
+													listener.failure(result);
+												}
+											}
+											
+										});
+										walletRelationsController.acceptDeclineWallet(httpRequest, profile, wallet.getID(), AcceptDeclineWallet.Type.DECLINE);
+									}
+									else if(friend != null){
+										friendsController.setUpdateListener(new UpdateFriendsListener(){
 
-										@Override
-										public void acceptDeclineComplete(Integer result) {
-											mpDialog.hide();
-											if(result == 1){
-												setList(context);
+											@Override
+											public void acceptDeclineComplete(Integer result) {
+												mpDialog.hide();
+												if(result == 1){
+													setList(context);
+												}
+												else{
+													listener.failure(result);
+												}
 											}
-											else{
-												listener.failure(result);
-											}
-										}
+											
+										});
 										
-									});
-									walletRelationsController.acceptDeclineWallet(httpRequest, profile, wallet.getID(), AcceptDeclineWallet.Type.DECLINE);
+										friendsController.acceptDeclineFriend(httpRequest, profile, friend, AcceptDeclineFriend.Type.DECLINE);
+									}
 								}
 								
 							});
@@ -165,7 +224,8 @@ public class WalletInviteFragment extends ListFragment{
 	
 	@Override  
 	public void onListItemClick(ListView l, View v, int position, long id) { 
-		listener.walletClicked( wallets.get(position) );
+		WalletFriend walletFriend = invites.get(position);
+		listener.walletClicked( walletFriend.wallet, walletFriend.friend );
 	}  
 	
 	

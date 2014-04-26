@@ -129,7 +129,8 @@ public class WalletRelationsController extends SQLiteOpenHelper {
 			values.put("user_id", curWalletRelation.getUserID());
 			values.put("accept", curWalletRelation.getAccept() );
 			try{
-				databaseW.insertOrThrow(TABLE_WALLET_RELATIONS, null, values);
+				//databaseW.insertOrThrow(TABLE_WALLET_RELATIONS, null, values);
+				databaseW.insertWithOnConflict(TABLE_WALLET_RELATIONS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
 			}
 			catch (SQLiteConstraintException e){
 				Log.i("Wallet Constraint Exception", curWalletRelation.getID() + " duplicate");
@@ -266,16 +267,28 @@ public class WalletRelationsController extends SQLiteOpenHelper {
         }
 	}
 	
-	public ArrayList<Integer> getRelationIdWallet(Integer walletID){
+	public ArrayList<Integer> getRelationIdsForWallet(Integer walletID, Integer accept){
 		SQLiteDatabase databaseR = this.getReadableDatabase();
 		String[] columns = {
 				COLUMN_ID
 		};
 		
-		String whereClause = "wallet_id = ?";
-		String[] whereArgs = new String[]{
-			walletID.toString()
-		};
+		String whereClause;
+		String[] whereArgs;
+		
+		if(accept != null){
+			whereClause = "wallet_id = ? AND accept = ?";
+			whereArgs = new String[]{
+				walletID.toString(),
+				accept.toString()
+			};
+		}
+		else{
+			whereClause = "wallet_id = ?";
+			whereArgs = new String[]{
+				walletID.toString()
+			};
+		}
 		
 		Cursor cursor = databaseR.query(TABLE_WALLET_RELATIONS, columns, whereClause, whereArgs, null, null, null);
 		
@@ -353,6 +366,31 @@ public class WalletRelationsController extends SQLiteOpenHelper {
         }
 	}
 	
+	public Boolean containsID(Integer id){
+		SQLiteDatabase databaseR = this.getReadableDatabase();
+		String[] columns = {
+				COLUMN_ID
+		};
+		
+		String whereClause = "id = ?";
+		String[] whereArgs = new String[]{
+				id.toString()
+		};
+		
+		Cursor cursor = databaseR.query(TABLE_WALLET_RELATIONS, columns, whereClause, whereArgs, null, null, null);
+		
+		if(cursor.getCount() >0)
+        {
+			databaseR.close();
+            return true;
+        }
+        else
+        {
+        	databaseR.close();
+            return false;
+        }
+	}
+	
 	public void updateAccept(Integer walletId, Integer userId, Integer accept){
 		SQLiteDatabase databaseR = this.getReadableDatabase();
 		
@@ -389,7 +427,7 @@ public class WalletRelationsController extends SQLiteOpenHelper {
 		if(wallet_ids == null) return;
 		for(int i = 0; i < wallet_ids.size(); i++){
 			System.out.println(wallet_ids.get(i));
-	   		GetWalletRelations getWalletRelations = new GetWalletRelations(httpRequest, profile, instance.getRelationIdWallet( wallet_ids.get(i) ), wallet_ids.get(i));
+	   		GetWalletRelations getWalletRelations = new GetWalletRelations(httpRequest, profile, instance.getRelationIdsForWallet(wallet_ids.get(i), 1), wallet_ids.get(i));
 		   	getWalletRelations.setWalletRelationsListener(new getWalletRelationsListener(){
 	
 				@Override

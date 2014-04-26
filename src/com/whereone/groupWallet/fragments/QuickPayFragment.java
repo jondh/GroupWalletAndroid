@@ -1,8 +1,5 @@
 package com.whereone.groupWallet.fragments;
 
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 
@@ -32,11 +29,13 @@ import com.whereone.groupWallet.R;
 import com.whereone.groupWallet.RecordConfirmDialog;
 import com.whereone.groupWallet.RecordConfirmDialog.onSelect;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
+import com.whereone.groupWallet.controllers.FriendsController;
 import com.whereone.groupWallet.controllers.TransactionsController;
 import com.whereone.groupWallet.controllers.TransactionsController.TransactionInsertListener;
 import com.whereone.groupWallet.controllers.UsersController;
 import com.whereone.groupWallet.controllers.WalletRelationsController;
 import com.whereone.groupWallet.controllers.WalletsController;
+import com.whereone.groupWallet.models.Friend;
 import com.whereone.groupWallet.models.Profile;
 import com.whereone.groupWallet.models.User;
 import com.whereone.groupWallet.models.WalletRelation;
@@ -69,6 +68,11 @@ public class QuickPayFragment extends Fragment {
 			selfListener.userUpdated(userID);
 		}
 	}
+	public void friendsUpdated(ArrayList<Friend> newFriends){
+		if(selfListener != null){
+			selfListener.friendsUpdated(newFriends);
+		}
+	}
 	
 	private void setSelfListener(SelfListener listener){
 		selfListener = listener;
@@ -77,6 +81,7 @@ public class QuickPayFragment extends Fragment {
 	private interface SelfListener{
 		public void walletsUpdated();
 		public void walletRelationsUpdated(ArrayList<WalletRelation> newRelations);
+		public void friendsUpdated(ArrayList<Friend> newFriends);
 		public void userUpdated(Integer userID);
 	}
 	
@@ -102,6 +107,7 @@ public class QuickPayFragment extends Fragment {
 		final WalletsController walletsController = WalletsController.getInstance();
 		final UsersController usersController = UsersController.getInstance();
 		final WalletRelationsController walletRelationsController = WalletRelationsController.getInstance();
+		final FriendsController friendsController = FriendsController.getInstance();
 		
 		final DBhttpRequest httpRequest = DBhttpRequest.getInstance();
 		
@@ -166,7 +172,7 @@ public class QuickPayFragment extends Fragment {
 
 			@Override
 			public void userUpdated(Integer userID) {
-				if( walletRelationsController.containsUser(selectedWallet, userID) ){
+				if( walletRelationsController.containsUser(selectedWallet, userID) || friendsController.containsUser(userID, 1) ){
 					if( !users.contains(userID)){
 						users.add(usersController.getUserNameFromId(userID));
 						getActivity().runOnUiThread(new Runnable(){
@@ -178,6 +184,33 @@ public class QuickPayFragment extends Fragment {
 								}
 							}
 						});
+					}
+				}
+			}
+
+			@Override
+			public void friendsUpdated(ArrayList<Friend> newFriends) {
+				if(selectedWallet == 0){
+					for(int i = 0; i < newFriends.size(); i++){
+						Integer tuserID;
+						if(newFriends.get(i).getUser1() == profileL.getUserID()){
+							tuserID = newFriends.get(i).getUser2();
+						}
+						else{
+							tuserID = newFriends.get(i).getUser1();
+						}
+						final Integer userID = tuserID;
+						if(usersController.containsId(userID)){
+							getActivity().runOnUiThread(new Runnable(){
+
+								@Override
+								public void run() {
+									adapterUsers.add(usersController.getUserNameFromId(userID));
+									adapterUsers.notifyDataSetChanged();
+								}
+								
+							});
+						}
 					}
 				}
 			}
@@ -239,7 +272,13 @@ public class QuickPayFragment extends Fragment {
 	               else{
 	            	   userFind.setAdapter(null);
 	            	   selectedWallet = walletsController.getWalletIdFromName( walletFind.getText().toString() );
-	            	   ArrayList<Integer> tempUserIds = walletRelationsController.getUsersForWallet(selectedWallet, profileL.getUserID(), 1);
+	            	   ArrayList<Integer> tempUserIds;
+	            	   if(selectedWallet == 0){
+	            		   tempUserIds = friendsController.getUserIds(profileL.getUserID(), 1);
+	            	   }
+	            	   else{
+	            		   tempUserIds = walletRelationsController.getUsersForWallet(selectedWallet, profileL.getUserID(), 1);
+	            	   }
 	            	   if( tempUserIds != null ){
 		            	   final ArrayList<String> temp = usersController.getUsersFromIds( tempUserIds );
 		            	   users.clear(); users.addAll(temp);
@@ -253,7 +292,12 @@ public class QuickPayFragment extends Fragment {
 			   		            	if(userFind.hasFocus()){
 			   		            		userFind.showDropDown();
 			   		            	}
-			   		            	if(!walletRelationsController.containsUser(selectedWallet, usersController.getIdFromUserName( userFind.getText().toString() ))){
+			   		            	if(selectedWallet == 0){
+			   		            		if(!friendsController.containsUser(usersController.getIdFromUserName( userFind.getText().toString() ), 1)){
+			   		            			userFind.setText("");
+			   		            		}
+			   		            	}
+			   		            	else if(!walletRelationsController.containsUser(selectedWallet, usersController.getIdFromUserName( userFind.getText().toString() ))){
 			   		            		userFind.setText("");
 			   		            	}
 			   					}
@@ -389,6 +433,7 @@ public class QuickPayFragment extends Fragment {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+		
 	} 
 	
 	@Override
@@ -396,18 +441,6 @@ public class QuickPayFragment extends Fragment {
 		super.onPause();
 	}
 
-	public String computeHash(String input) throws NoSuchAlgorithmException, UnsupportedEncodingException{
-	    MessageDigest digest = MessageDigest.getInstance("SHA-256");
-	    digest.reset();
-
-	    byte[] byteData = digest.digest(input.getBytes("UTF-8"));
-	    StringBuffer sb = new StringBuffer();
-
-	    for (int i = 0; i < byteData.length; i++){
-	      sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
-	    }
-	    return sb.toString();
-	}
 	
 	public static void hideSoftKeyboard(Context context2) {
 	    InputMethodManager inputMethodManager = (InputMethodManager)  context2.getSystemService(Activity.INPUT_METHOD_SERVICE);

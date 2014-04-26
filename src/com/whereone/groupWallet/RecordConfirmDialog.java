@@ -74,7 +74,7 @@ public class RecordConfirmDialog extends DialogFragment {
 	        TextView row3 = (TextView) view.findViewById(R.id.dialog_owed_row3);
 	        
 	        row1.setText("You spent");
-	        row2.setText(amount + "on");
+	        row2.setText(amount + " on");
 	        row3.setText(firstname + ' ' + lastname + " (" + username + ")");
         	
 	        builder.setView(view);

@@ -15,6 +15,7 @@ import android.widget.ListView;
 
 import com.whereone.groupWallet.GetPageUsers.getUsersListener;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
+import com.whereone.groupWallet.controllers.FriendsController;
 import com.whereone.groupWallet.controllers.WalletRelationsController;
 import com.whereone.groupWallet.customAdapters.UserListAdapter;
 import com.whereone.groupWallet.customAdapters.UserListAdapter.UserListAdapterListener;
@@ -39,6 +40,7 @@ public class FindShowUsers {
 	private Integer walletID;
 	private ArrayList<Integer> usersExclude;
 	private WalletRelationsController walletRelationsController;
+	private FriendsController friendsController;
 	
 	public interface FindShowUsersListener{
 		public void userClicked(User user);
@@ -49,7 +51,9 @@ public class FindShowUsers {
 		this.listener = listener;
 	}
 
-	public FindShowUsers(Context context, DBhttpRequest httpRequest, Profile profile, EditText userSearch, ListView userList, Integer length, String buttonText, Integer walletID, WalletRelationsController walletRelationsController){
+	public FindShowUsers(Context context, DBhttpRequest httpRequest, Profile profile, EditText userSearch, 
+			ListView userList, Integer length, String buttonText, Integer walletID, 
+			WalletRelationsController walletRelationsController, FriendsController friendsController){
 		this.context = context;
 		this.httpRequest = httpRequest;
 		this.profile = profile;
@@ -60,6 +64,7 @@ public class FindShowUsers {
 		this.buttonText = buttonText;
 		this.walletID = walletID;
 		this.walletRelationsController = walletRelationsController;
+		this.friendsController = friendsController;
 		
 		setUpUserArrays();
 		userSearchTextListener();
@@ -72,7 +77,12 @@ public class FindShowUsers {
 		usersExclude = new ArrayList<Integer>();
 		usersExclude.add( profile.getUserID() );
 		if(walletID != null){
-			usersExclude.addAll( walletRelationsController.getUsersForWallet(walletID, null, null) );
+			if(walletID == 0){
+				usersExclude.addAll( friendsController.getUserIds(profile.getUserID(), null) );
+			}
+			else{
+				usersExclude.addAll( walletRelationsController.getUsersForWallet(walletID, null, null) );
+			}
 		}
 	}
 	

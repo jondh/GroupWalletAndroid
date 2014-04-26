@@ -32,6 +32,8 @@ import com.whereone.groupWallet.FindShowUsers;
 import com.whereone.groupWallet.FindShowUsers.FindShowUsersListener;
 import com.whereone.groupWallet.R;
 import com.whereone.groupWallet.controllers.DBhttpRequest;
+import com.whereone.groupWallet.controllers.FriendsController;
+import com.whereone.groupWallet.controllers.FriendsController.FriendInsertListener;
 import com.whereone.groupWallet.controllers.UsersController;
 import com.whereone.groupWallet.controllers.WalletRelationsController;
 import com.whereone.groupWallet.controllers.WalletRelationsController.WalletRelationInsertListener;
@@ -39,6 +41,7 @@ import com.whereone.groupWallet.controllers.WalletsController;
 import com.whereone.groupWallet.controllers.WalletsController.walletsControllerListener;
 import com.whereone.groupWallet.customAdapters.UserListAdapter;
 import com.whereone.groupWallet.customAdapters.UserListAdapter.UserListAdapterListener;
+import com.whereone.groupWallet.models.Friend;
 import com.whereone.groupWallet.models.Profile;
 import com.whereone.groupWallet.models.User;
 import com.whereone.groupWallet.models.WalletRelation;
@@ -57,6 +60,7 @@ public class AddFragment extends Fragment{
 	private WalletsController walletsController;
 	private WalletRelationsController walletRelationsController;
 	private UsersController usersController;
+	private FriendsController friendsController;
 	private DBhttpRequest httpRequest;
 	private Profile profile;
 	private Integer type;
@@ -153,6 +157,9 @@ public class AddFragment extends Fragment{
 					if( walletsController.containsWalletName(insertWallet.getText().toString()) ){
 						insertWallet.setError("You already have a wallet named this");
 					}
+					else if( insertWallet.getText().length() < 4 ){
+						insertWallet.setError("Name should be at least 4 characters");
+					}
 				}
 				
 			});
@@ -164,7 +171,9 @@ public class AddFragment extends Fragment{
 					walletView.setVisibility(View.INVISIBLE);
 					userView.setVisibility(View.VISIBLE);
 					
-					FindShowUsers findShowUsers = new FindShowUsers(getActivity(), httpRequest, profile, userSearch, userList, length, "select", walletID, walletRelationsController);
+					FindShowUsers findShowUsers = new FindShowUsers(getActivity(), httpRequest, profile, 
+							userSearch, userList, length, "select", walletID, 
+							walletRelationsController, friendsController);
 					findShowUsers.setThisListener(new FindShowUsersListener(){
 
 						@Override
@@ -256,7 +265,8 @@ public class AddFragment extends Fragment{
 			walletView.setVisibility(View.INVISIBLE);
 			userView.setVisibility(View.VISIBLE);
 			
-			FindShowUsers findShowUsers = new FindShowUsers(getActivity(), httpRequest, profile, userSearch, userList, length, "select", walletID, walletRelationsController);
+			FindShowUsers findShowUsers = new FindShowUsers(getActivity(), httpRequest, profile, userSearch, 
+					userList, length, "select", walletID, walletRelationsController, friendsController);
 			findShowUsers.setThisListener(new FindShowUsersListener(){
 
 				@Override
@@ -277,17 +287,31 @@ public class AddFragment extends Fragment{
 				        	
 				        	mpDialog.setMessage("loading");
 							mpDialog.show();
-				            walletRelationsController.insertPutWalletRelation(httpRequest, profile, new WalletRelation(0,walletID,user.getUserID(),false), usersController);
-				            walletRelationsController.setWalletRelationInsertListener(new WalletRelationInsertListener(){
+							if(walletID == 0){
+								friendsController.setFriendInsertListener(new FriendInsertListener(){
 
-								@Override
-								public void insertPutComplete(Integer result) {
-									mpDialog.hide();
-									listener.newUserInserted(walletID);
-								}
-				            	
-				            });
-				            
+									@Override
+									public void insertPutComplete(Integer result) {
+										mpDialog.hide();
+										listener.newUserInserted(walletID);
+									}
+									
+								});
+								
+								friendsController.insertPutFriend(httpRequest, profile, new Friend(0, profile.getUserID(), user.getUserID(), false), usersController);
+							}
+							else{
+					            walletRelationsController.insertPutWalletRelation(httpRequest, profile, new WalletRelation(0,walletID,user.getUserID(),false), usersController);
+					            walletRelationsController.setWalletRelationInsertListener(new WalletRelationInsertListener(){
+	
+									@Override
+									public void insertPutComplete(Integer result) {
+										mpDialog.hide();
+										listener.newUserInserted(walletID);
+									}
+					            	
+					            });
+							}
 				        }
 				     })
 				    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
@@ -313,6 +337,7 @@ public class AddFragment extends Fragment{
 		walletsController = WalletsController.getInstance();
 		walletRelationsController = WalletRelationsController.getInstance();
 		usersController = UsersController.getInstance();
+		friendsController = FriendsController.getInstance();
 		httpRequest = DBhttpRequest.getInstance();
 		profile = Profile.getInstance();
 		

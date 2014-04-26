@@ -14,6 +14,7 @@
         android:id="@+id/quickPay_error"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-thin"
         android:text=" "
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
@@ -27,8 +28,11 @@
         android:layout_marginTop="14dp"
         android:completionThreshold="1"
         android:ems="10"
+        android:fontFamily="sans-serif-condensed"
+        android:gravity="center"
         android:hint="@string/users"
-        android:singleLine="true" >
+        android:singleLine="true"
+        android:textStyle="bold|normal" >
 
     </AutoCompleteTextView>
 
@@ -39,9 +43,11 @@
         android:layout_alignBottom="@+id/whoPayQuickPay"
         android:layout_alignParentRight="true"
         android:ems="10"
+        android:fontFamily="sans-serif"
         android:hint="@string/amount"
         android:inputType="numberDecimal"
-        android:singleLine="true" />
+        android:singleLine="true"
+        android:textStyle="italic" />
 
     <Button
         android:id="@+id/submitQuickPay"
@@ -51,7 +57,9 @@
         android:layout_alignRight="@+id/amountQuickPay"
         android:layout_below="@+id/commentsQuickPay"
         android:layout_marginTop="16dp"
-        android:text="@string/submit" />
+        android:fontFamily="sans-serif-condensed"
+        android:text="@string/submit"
+        android:textStyle="bold" />
 
     <RadioGroup
         android:id="@+id/whoPayQuickPay"
@@ -64,13 +72,16 @@
             android:id="@+id/oweQuickPay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-thin"
             android:text="@string/oweButton" />
 
         <RadioButton
             android:id="@+id/owedQuickPay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-thin"
             android:text="@string/owedButton" />
+
     </RadioGroup>
 
     <EditText
@@ -81,17 +92,9 @@
         android:layout_alignRight="@+id/amountQuickPay"
         android:layout_below="@+id/amountQuickPay"
         android:ems="10"
+        android:fontFamily="sans-serif-thin"
         android:hint="@string/comments"
         android:inputType="textMultiLine" />
-
-    <Button
-        android:id="@+id/logoutQuickPay"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/submitQuickPay"
-        android:layout_alignLeft="@+id/commentsQuickPay"
-        android:layout_toLeftOf="@+id/amountQuickPay"
-        android:text="@string/logout" />
 
     <AutoCompleteTextView
         android:id="@+id/walletAuto"
@@ -101,9 +104,11 @@
         android:layout_below="@+id/quickPay_error"
         android:completionThreshold="1"
         android:ems="10"
+        android:fontFamily="sans-serif-condensed"
         android:gravity="center"
         android:hint="@string/wallets"
-        android:singleLine="true" >
+        android:singleLine="true"
+        android:textStyle="bold|normal" >
 
         <requestFocus />
     </AutoCompleteTextView>

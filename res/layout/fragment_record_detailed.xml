@@ -19,6 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:fontFamily="sans-serif-thin"
             android:gravity="center"
             android:text="ze Time and Date"
             android:textAppearance="?android:attr/textAppearanceSmall" />
@@ -53,6 +54,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
+                android:fontFamily="sans-serif-condensed"
                 android:text="Medium Text"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
@@ -61,8 +63,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
+                android:fontFamily="sans-serif-thin"
                 android:text="Small Text"
                 android:textAppearance="?android:attr/textAppearanceSmall" />
+
         </LinearLayout>
 
         <TextView
@@ -71,9 +75,11 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_weight="0.3"
+            android:fontFamily="sans-serif-thin"
             android:gravity="right"
             android:text="Spent"
             android:textAppearance="?android:attr/textAppearanceLarge" />
+
     </LinearLayout>
 
     <LinearLayout
@@ -95,6 +101,7 @@
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="0.5"
+            android:fontFamily="sans-serif-thin"
             android:text="@string/moneyPlace"
             android:textAppearance="?android:attr/textAppearanceLarge" />
 
@@ -104,9 +111,11 @@
             android:layout_height="wrap_content"
             android:layout_gravity="right"
             android:layout_weight="0.3"
+            android:fontFamily="sans-serif-thin"
             android:gravity="right"
             android:text="ON"
             android:textAppearance="?android:attr/textAppearanceLarge" />
+
     </LinearLayout>
 
     <LinearLayout
@@ -138,6 +147,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
+                android:fontFamily="sans-serif-condensed"
                 android:text="Medium Text"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
@@ -146,6 +156,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
+                android:fontFamily="sans-serif-thin"
                 android:text="Small Text"
                 android:textAppearance="?android:attr/textAppearanceSmall" />
 
@@ -157,6 +168,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_weight="0.3"
+            android:fontFamily="sans-serif-thin"
             android:gravity="right"
             android:text="In Wallet"
             android:textAppearance="?android:attr/textAppearanceLarge" />
@@ -182,6 +194,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_weight="0.8"
+            android:fontFamily="sans-serif-condensed"
             android:text="Large Text"
             android:textAppearance="?android:attr/textAppearanceLarge" />
 
@@ -196,10 +209,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="0"
+            android:fontFamily="sans-serif"
             android:gravity="center"
             android:minLines="2"
             android:text="Medium Text d fsl kfsalk fjsa fadlskjf lksad flksda fsdlkf jasdlk fsdk fskld jfasld f"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textStyle="bold" />
 
     </LinearLayout>
 

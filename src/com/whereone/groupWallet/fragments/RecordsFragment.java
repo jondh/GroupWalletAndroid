@@ -57,6 +57,7 @@ public class RecordsFragment extends ListFragment{
 		public void oweUserClicked(User user);
 		public void owedUserClicked(User user);
 		public void recordClicked(Record record);
+		public void update();
 	}
 	
 	public void setCache(LruCache<Integer, Drawable> _cache){
@@ -81,6 +82,12 @@ public class RecordsFragment extends ListFragment{
 			setView();
 			setAdapter();
 			return true;
+		}
+	}
+	
+	public void update(){
+		if(listener != null){
+			listener.update();
 		}
 	}
 	
@@ -200,9 +207,16 @@ public class RecordsFragment extends ListFragment{
 			}
 			Collections.sort(records, Record.Comparitors.DATE);
 			if(records != null){
-				RecordListAdapter radapter = new RecordListAdapter(context, R.layout.record_row, records, cache);
-				radapter.notifyDataSetChanged();
-				setListAdapter(radapter);
+				final RecordListAdapter radapter = new RecordListAdapter(context, R.layout.record_row, records, cache);
+				getActivity().runOnUiThread(new Runnable(){
+
+					@Override
+					public void run() {
+						radapter.notifyDataSetChanged();
+						setListAdapter(radapter);
+					}
+					
+				});
 				
 				radapter.setRecordListAdapterListener(new RecordListAdapterListener(){
 	

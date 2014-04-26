@@ -445,10 +445,12 @@ public class TransactionsController extends SQLiteOpenHelper {
 			}
 
 			@Override
-			public void insertRecordComplete(Boolean result, String resultString) {
-				if(result){
+			public void insertRecordComplete(Record result, String resultString) {
+				if(result != null){
 					mPDialog.hide(); 
-					System.out.println("SUCCESSFULLY inserted record");
+					ArrayList<Record> tempRecord = new ArrayList<Record>();
+					tempRecord.add(result);
+					insertRecords(tempRecord);
 					instance.insertListener.insertComplete(1);
 					System.out.println("SUCCESSFULLY inserted record");
 				}

@@ -108,6 +108,7 @@ public class GetRecords extends AsyncTask<String, Void, ArrayList<Record>>{
 		else{
 			nameValuePairs.add(new BasicNameValuePair("currentRecords[]", "0"));
 		}
+		nameValuePairs.add(new BasicNameValuePair("userID", profile.getUserID().toString() ));
 		nameValuePairs.add(new BasicNameValuePair("public_token", profile.getPublicToken()));
 		nameValuePairs.add(new BasicNameValuePair("private_token", profile.hashedPrivate()));
 		nameValuePairs.add(new BasicNameValuePair("timeStamp", profile.getCurrentDate()));

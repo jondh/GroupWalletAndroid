@@ -12,6 +12,10 @@
             backward-compatibility can go here.
         -->
     </style>
+    
+    <style name="MyAppTheme" parent="@android:style/Theme.Light">
+        <!-- Any customizations for your app running on pre-3.0 devices here -->
+    </style>
 
     <!-- Application theme. -->
     <style name="AppTheme" parent="AppBaseTheme">

@@ -54,6 +54,12 @@ public class WalletsFragment extends ListFragment{
 		public void load();
 	}
 	
+	public void update(){
+		loadingFlag = true;
+		loading.setVisibility(View.VISIBLE);
+		listener.load();
+	}
+	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.fragment_wallets, null);

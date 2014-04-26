@@ -14,6 +14,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.whereone.groupWallet.R;
+import com.whereone.groupWallet.controllers.FriendsController;
 import com.whereone.groupWallet.controllers.TransactionsController;
 import com.whereone.groupWallet.controllers.UsersController;
 import com.whereone.groupWallet.controllers.WalletRelationsController;
@@ -28,12 +29,15 @@ public class RelationshipsFragment extends ListFragment{
 	
 	private SelfListener selfListener;
 	private RelationshipListener relationshipListener;
+	private UsersController usersController;
 	private WalletsController walletsController;
 	private WalletRelationsController walletRelationsController;
+	private FriendsController friendsController;
 	private Wallet wallet;
 	private Profile profile;
 	private RelativeLayout loading;
 	private Boolean loadingFlag;
+	private ArrayList<User> users;
 	
 	public void walletRelationshipsUpdated(){
 		if(selfListener != null){
@@ -62,10 +66,21 @@ public class RelationshipsFragment extends ListFragment{
 	
 	public void setWallet(Wallet wallet, Integer walletID){
 		if(wallet == null && walletID != null){
+			if(walletsController == null){
+				walletsController = WalletsController.getInstance();
+			}
 			this.wallet = walletsController.getWalletFromId(walletID);
 		}
 		else{
 			this.wallet = wallet;
+		}
+	}
+	
+	public void update(){
+		if(wallet != null){
+			relationshipListener.load(wallet);
+			loadingFlag = true;
+			loading.setVisibility(View.VISIBLE);
 		}
 	}
 	
@@ -104,7 +119,9 @@ public class RelationshipsFragment extends ListFragment{
 			
 			@Override
 			public void onClick(View v) {
-				relationshipListener.addUserClicked(wallet);
+				if(wallet != null){
+					relationshipListener.addUserClicked(wallet);
+				}
 			}
 		});
 		
@@ -117,8 +134,10 @@ public class RelationshipsFragment extends ListFragment{
 		
 		final Context context = getActivity();
 		profile = Profile.getInstance();
+		usersController = UsersController.getInstance();
 		walletsController = WalletsController.getInstance();
 		walletRelationsController = WalletRelationsController.getInstance();
+		friendsController = FriendsController.getInstance();
 		loadingFlag = false;
 		
 		if(wallet == null){
@@ -160,9 +179,13 @@ public class RelationshipsFragment extends ListFragment{
 	
 	private void setList(final Context context){
 		if(wallet != null){
-
-			final ArrayList<User> users = UsersController.getInstance().getUserssFromIds( WalletRelationsController.getInstance().getUsersForWallet( wallet.getID(), profile.getUserID(), 1 ) );
 			
+			if( wallet.getID() == 0 ){
+				users = usersController.getUserssFromIds( friendsController.getUserIds( profile.getUserID() , 1) );
+			}
+			else{
+				users = usersController.getUserssFromIds( walletRelationsController.getUsersForWallet( wallet.getID(), profile.getUserID(), 1 ) );
+			}
 				if(users != null){
 					
 					getActivity().runOnUiThread(new Runnable(){

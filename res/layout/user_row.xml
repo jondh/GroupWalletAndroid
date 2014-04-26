@@ -84,6 +84,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_weight="0.2"
+                android:fontFamily="sans-serif-condensed"
                 android:text="Select"
                 android:textSize="12sp" />
 
